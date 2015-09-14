@@ -52,16 +52,19 @@ class coolr_wt310_reader:
         buf = self.get(":NUM:NORM:VAL?\n") # is \n required?
         return buf.split(',')
 
-    # default setting. to query, :NUM:NORM:ITEM1? for exampe
-    # 1: Watt hour, 2: Current, 3: Active Power, 4: Apparent Power 
-    # 5: Reactive Power, 6: Power factor
 
     def sample(self):
         a = self.readvals()
+        # default setting. to query, :NUM:NORM:ITEM1? for exampe
+        # 1: Watt hour, 2: Current, 3: Active Power, 4: Apparent Power 
+        # 5: Reactive Power, 6: Power factor
+        # a's index is the item no minus one
+
         ret = {}
-        ret['WH'] = a[0] # NOTE: the item no minus one
-        ret['P']  = a[2]
-        ret['PF'] = a[5]
+        # ret['WH'] = float(a[0])
+        ret['J'] = float(a[0]) * 3600.0
+        ret['P']  = float(a[2])
+        ret['PF'] = float(a[5])
         return ret
 
     def start(self):
@@ -80,30 +83,81 @@ class coolr_wt310_reader:
         self.set(":INTEG:STOP")  # stop integration
 
 
+import getopt
+
+def usage():
+    print ''
+    print 'Usage: coolr_wt310.py [options]'
+    print ''
+    print '[options]'
+    print ''
+    print '-i int : sampling interval in sec'
+    print '-c str : command string'
+    print '-o str : output string'
+    print ''
+
 if __name__ == '__main__':
 
+    interval_sec = .5
     cmd = ''
-    if len(sys.argv) >= 2:
-        cmd = sys.argv[1]
+    outputfn = ''
+
+    shortopt = "hi:c:o:"
+    longopt = []
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 
+                                   shortopt, longopt)
+    except getopt.GetoptError, err:
+        print err
+        usage()
+        sys.exit(1)
+
+    for o, a in opts:
+        if o in ('-h'):
+            usage()
+            sys.exit(0)
+        elif o in ('-i'):
+            interval_sec = float(a)
+        elif o in ('-c'):
+            cmd = a
+        elif o in ('-o'):
+            outputfn = a
+        else:
+            print 'Unknown:', o, a
+            
+    #
+    #
 
     wt310 = coolr_wt310_reader()
 
     if wt310.open():
         sys.exit(1)
 
-    wt310.start()
-
     if len(cmd) > 0:
         print wt310.get(cmd)
         sys.exit(0)
 
+    f = sys.stdout
+
+    if len(outputfn) > 0:
+        try:
+            f = open(outputfn, 'w')
+        except:
+            print 'Error: failed to open', fn
+            sys.exit(1)
+
+        print 'Writing to', outputfn
+
     while True:
-        s =  wt310.sample()
+        wt310.start()
 
-        #joules = float(s['WH']) * 3600.0
-        print '%.2lf' % time.time(),
-        #print '%lf' % joules,
-        print s['P'], s['PF'],
-        print
+        s = wt310.sample()
 
-        time.sleep(1)
+        print >>f, '%.2lf' % time.time(),
+        print >>f, '%.0lf' % s['J'],
+        print >>f, '%.2lf' % s['P'],
+        print >>f, '%.4lf' % s['PF'],
+        print >>f, ''
+        f.flush()
+
+        time.sleep(interval_sec)
