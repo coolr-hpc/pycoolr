@@ -698,10 +698,15 @@ class coolrmon_tracer:
                 self.sample_energy('run')
 
                 # constructing a json output
+                totalpower = 0.0
                 s  = '{"sample":"power","time":%.3f' % (self.prev_e['time'] - self.start_time0)
                 for k in sorted(self.lastpower.keys()):
                     if k != 'time':
                         s += ',"%s":%.1f' % (self.rapl.shortenkey(k), self.lastpower[k])
+                    # this is a bit ad hoc way to calculate the total. needs to be fixed later
+                    if k.find("core") == -1:
+                        totalpower += self.lastpower[k]
+                s += ',"total":%.1f' % (totalpower)
                 s += '}'
                 self.logger(s + '\n')
 
