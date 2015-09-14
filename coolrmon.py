@@ -65,11 +65,14 @@ class coolrmon_tracer:
             s += '}'
         s += '}'
 
-        self.logger(s + '\n')
+        self.logger(s)
 
         return temp
 
     def start_energy_counter(self):
+        if not self.rapl.initialized():
+            return
+
         e = self.rapl.readenergy()
         self.start_time_e = time.time()
 
@@ -83,6 +86,9 @@ class coolrmon_tracer:
         self.prev_e = e
 
     def read_energy_acc(self):
+        if not self.rapl.initialized():
+            return
+
         e = self.rapl.readenergy()
 
         de = self.rapl.diffenergy(self.prev_e, e)
@@ -97,11 +103,17 @@ class coolrmon_tracer:
         return e
 
     def stop_energy_counter(self):
+        if not self.rapl.initialized():
+            return
+
         e = self.read_energy_acc()
         self.stop_time = time.time()
 
 
     def sample_energy(self, label):
+        if not self.rapl.initialized():
+            return
+
         if label == 'run' :
             e = self.read_energy_acc()
         else:
@@ -114,7 +126,7 @@ class coolrmon_tracer:
             if k != 'time':
                 s += ',"%s":%d' % ( self.rapl.shortenkey(k), e[k])
         s += '}'
-        self.logger(s + '\n')
+        self.logger(s)
 
         return e
 
@@ -164,18 +176,20 @@ class coolrmon_tracer:
 
         npkgs = len(self.ct.pkgcpus.keys())
         s += ',"npkgs":%d' % npkgs
-        s += ',"max_energy_uj":{'
-        firstitem = True
-        for p in sorted(self.ct.pkgcpus.keys()):
-            k = 'package-%d' % p  # does 'topology' and rapldriver follow the same numbering scheme?
-            if firstitem :
-                firstitem = False
-            else:
-                s += ','
-            s += '"p%d":%d' % (p, self.rapl.max_energy_range_uj_d[k])
-        s += '}'
 
-        self.logger(s + '\n')
+        if self.rapl.initialized():
+            s += ',"max_energy_uj":{'
+            firstitem = True
+            for p in sorted(self.ct.pkgcpus.keys()):
+                k = 'package-%d' % p  # does 'topology' and rapldriver follow the same numbering scheme?
+                if firstitem :
+                    firstitem = False
+                else:
+                    s += ','
+                    s += '"p%d":%d' % (p, self.rapl.max_energy_range_uj_d[k])
+                s += '}'
+
+        self.logger(s)
 
 
     def tee(self,argv):
@@ -188,15 +202,18 @@ class coolrmon_tracer:
             print 'stdout:', l,
 
     def report_total_energy(self):
+        if not self.rapl.initialized():
+            return
+
         dt = self.stop_time - self.start_time_e
         # constructing a json output
         e = self.totalenergy
         s  = '{"total":"energy","difftime":%f' % (dt)
         for k in sorted(e.keys()):
             if k != 'time':
-                s += ',"%s":%d' % ( self.rapl.shortenkey(k), e[k])
+                s += ',"%s":%d' % (self.rapl.shortenkey(k), e[k])
         s += '}'
-        self.logger(s + '\n')
+        self.logger(s)
 
     def sigh(signal, frame):
         self.kp.disable()
@@ -207,6 +224,7 @@ class coolrmon_tracer:
 
         self.start_time0 = time.time()
         s = '{"starttime":%.3f}' % self.start_time0
+        self.logger(s)
 
         if len(argv) == 0:
             signal.signal(signal.SIGINT, self.sigh)
@@ -220,17 +238,18 @@ class coolrmon_tracer:
                 self.sample_energy('run')
 
                 # constructing a json output
-                totalpower = 0.0
-                s  = '{"sample":"power","time":%.3f' % (self.prev_e['time'] - self.start_time0)
-                for k in sorted(self.lastpower.keys()):
-                    if k != 'time':
-                        s += ',"%s":%.1f' % (self.rapl.shortenkey(k), self.lastpower[k])
-                    # this is a bit ad hoc way to calculate the total. needs to be fixed later
-                    if k.find("core") == -1:
-                        totalpower += self.lastpower[k]
-                s += ',"total":%.1f' % (totalpower)
-                s += '}'
-                self.logger(s + '\n')
+                if self.rapl.initialized():
+                    totalpower = 0.0
+                    s  = '{"sample":"power","time":%.3f' % (self.prev_e['time'] - self.start_time0)
+                    for k in sorted(self.lastpower.keys()):
+                        if k != 'time':
+                            s += ',"%s":%.1f' % (self.rapl.shortenkey(k), self.lastpower[k])
+                        # this is a bit ad hoc way to calculate the total. needs to be fixed later
+                        if k.find("core") == -1:
+                            totalpower += self.lastpower[k]
+                    s += ',"total":%.1f' % (totalpower)
+                    s += '}'
+                    self.logger(s)
 
                 time.sleep(self.intervalsec)
                 if self.kp.available():
