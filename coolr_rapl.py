@@ -24,6 +24,11 @@ class rapl_reader:
         if self.dryrun :
             return 
 
+        self.init = False
+        if not os.path.exists(self.rapldir):
+            return
+        self.init = True
+
         for d1 in os.listdir(self.rapldir):
             dn = "%s/%s" % (self.rapldir,d1)
             fn = dn + "/name"
@@ -55,6 +60,9 @@ class rapl_reader:
             self.max_energy_range_uj_d[k] = int(f.readline())
             f.close()
 
+    def initialized(self):
+        return self.init
+
     def shortenkey(self,str):
         return str.replace('package-','p')
 
@@ -63,6 +71,9 @@ class rapl_reader:
 
 
     def readenergy(self):
+        if not self.init:
+            return
+
         ret = {}
         ret['time'] = time.time()
         if self.dryrun:
@@ -82,6 +93,9 @@ class rapl_reader:
         return ret
 
     def readpowerlimit(self):
+        if not self.init:
+            return
+
         ret = {}
         if self.dryrun:
             ret['package-0'] = 100.0
@@ -133,19 +147,19 @@ class rapl_reader:
 
 
 if __name__ == '__main__':
-    print '=== ', sys._getframe().f_code.co_name
 
     rr = rapl_reader()
 
-    print rr.dirs
+    if rr.initialized():
+        for i in range(0,3):
+            print '#%d reading rapl' % i
+            e1 = rr.readenergy()
+            time.sleep(1)
+            e2 = rr.readenergy()
+            p = rr.calcpower(e1,e2)
+            for k in sorted(p):
+                print k, p[k]
+        print
+    else:
+        print 'Error: No intel rapl sysfs found'
 
-    for i in range(0,3):
-        print '#%d reading rapl' % i
-        e1 = rr.readenergy()
-        time.sleep(1)
-        e2 = rr.readenergy()
-        p = rr.calcpower(e1,e2)
-        for k in sorted(p):
-            print k, p[k]
-
-    print
