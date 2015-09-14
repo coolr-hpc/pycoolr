@@ -10,6 +10,7 @@
 #
 
 import re, os, sys
+import time
 
 class coolr_wt310_reader:
 
@@ -49,7 +50,19 @@ class coolr_wt310_reader:
 
     def readvals(self):
         buf = self.get(":NUM:NORM:VAL?\n") # is \n required?
-        return buf.split()
+        return buf.split(',')
+
+    # default setting. to query, :NUM:NORM:ITEM1? for exampe
+    # 1: Watt hour, 2: Current, 3: Active Power, 4: Apparent Power 
+    # 5: Reactive Power, 6: Power factor
+
+    def sample(self):
+        a = self.readvals()
+        ret = {}
+        ret['WH'] = a[0] # NOTE: the item no minus one
+        ret['P']  = a[2]
+        ret['PF'] = a[5]
+        return ret
 
     def start(self):
         # set item1 watt-hour
@@ -69,6 +82,10 @@ class coolr_wt310_reader:
 
 if __name__ == '__main__':
 
+    cmd = ''
+    if len(sys.argv) >= 2:
+        cmd = sys.argv[1]
+
     wt310 = coolr_wt310_reader()
 
     if wt310.open():
@@ -76,5 +93,17 @@ if __name__ == '__main__':
 
     wt310.start()
 
-    print wt310.readvals()
+    if len(cmd) > 0:
+        print wt310.get(cmd)
+        sys.exit(0)
 
+    while True:
+        s =  wt310.sample()
+
+        #joules = float(s['WH']) * 3600.0
+        print '%.2lf' % time.time(),
+        #print '%lf' % joules,
+        print s['P'], s['PF'],
+        print
+
+        time.sleep(1)
