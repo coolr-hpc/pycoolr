@@ -50,7 +50,7 @@ class coolrmon_tracer:
         temp = self.ctr.readtempall()
 
         # constructing a json output
-        s  = '{"sample":"temp", "time":%.3f' % (time.time() - self.start_time0)
+        s  = '{"sample":"temp", "time":%.3f' % (time.time())
         s += ',"label"="%s"' % label
         for p in sorted(temp.keys()):
             s += ',"p%d":{' % p
@@ -119,8 +119,8 @@ class coolrmon_tracer:
         else:
             e = self.rapl.readenergy()
 
-        # constructing a json output
-        s  = '{"sample":"energy","time":%.3f' % (e['time'] - self.start_time0)
+        # constructing a simple output
+        s  = '{"sample":"energy","time":%.3f' % (e['time'])
         s += ',"label"="%s"' % label
         for k in sorted(e.keys()):
             if k != 'time':
@@ -240,7 +240,7 @@ class coolrmon_tracer:
                 # constructing a json output
                 if self.rapl.initialized():
                     totalpower = 0.0
-                    s  = '{"sample":"power","time":%.3f' % (self.prev_e['time'] - self.start_time0)
+                    s  = '{"sample":"power","time":%.3f' % (self.prev_e['time'])
                     for k in sorted(self.lastpower.keys()):
                         if k != 'time':
                             s += ',"%s":%.1f' % (self.rapl.shortenkey(k), self.lastpower[k])
