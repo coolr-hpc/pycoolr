@@ -26,7 +26,7 @@ import signal
 import keypress
 import clr_rapl
 import clr_hwmon
-import clr_cpuinfo
+import clr_nodeinfo
 
 from clr_misc import *
 
@@ -165,8 +165,8 @@ class coolrmon_tracer:
         # instantiate class
         self.ctr = clr_hwmon.coretemp_reader()
         self.rapl = clr_rapl.rapl_reader()
-        self.oc = clr_cpuinfo.osconfig()
-        self.ct = clr_cpuinfo.cputopology()
+        self.oc = clr_nodeinfo.osconfig()
+        self.ct = clr_nodeinfo.cputopology()
 
     def showconfig(self):
         s  = '{"kernelversion":"%s"' % self.oc.version
