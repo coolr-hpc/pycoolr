@@ -74,6 +74,7 @@ class wt310_reader:
         # set item1 watt-hour
         self.set(":NUM:NORM:ITEM1 WH,1")
         # start integration
+        self.set(":INTEG:MODE CONT")
         self.set(":INTEG:START")
         # ":INTEG:RESET" reset integration
         # ":RATE 100MS"  set the update rate 100ms
@@ -103,13 +104,15 @@ def usage():
 if __name__ == '__main__':
 
     interval_sec = .5
-    cmd = ''
     outputfn = ''
     smqflag = False
     ipaddr = ''
 
-    shortopt = "hi:c:o:s:"
-    longopt = []
+    cmdmode = ''
+    cmd = ''
+
+    shortopt = "hi:o:s:"
+    longopt = ["set=", "get="]
     try:
         opts, args = getopt.getopt(sys.argv[1:], 
                                    shortopt, longopt)
@@ -124,7 +127,11 @@ if __name__ == '__main__':
             sys.exit(0)
         elif o in ('-i'):
             interval_sec = float(a)
-        elif o in ('-c'):
+        elif o in ('--set'):
+            cmdmode = 'set'
+            cmd = a
+        elif o in ('--get'):
+            cmdmode = 'get'
             cmd = a
         elif o in ('-o'):
             outputfn = a
@@ -143,7 +150,10 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if len(cmd) > 0:
-        print wt310.get(cmd)
+        if cmdmode == 'set':
+            wt310.set(cmd)
+        else:
+            print wt310.get(cmd)
         sys.exit(0)
 
     f = sys.stdout
@@ -159,9 +169,9 @@ if __name__ == '__main__':
 
     cfg = {}
     cfg["c1"] = {"label":"Time","unit":"Sec"}
-    cfg["c2"] = {"label":"Energy","unit":"Joules"}
-    cfg["c3"] = {"label":"Power", "unit":"Watt"}
-    cfg["c4"] = {"label":"Power Factor", "unit":""}
+    cfg["c2"] = {"label":"Power", "unit":"Watt"}
+    #cfg["c"] = {"label":"Power Factor", "unit":""}
+    #cfg["c"] = {"label":"Energy","unit":"Joules"}
 
 
     print >>f, json.dumps(cfg)
@@ -182,8 +192,10 @@ if __name__ == '__main__':
         s = wt310.sample()
 
         ts = time.time()
-        str = '%.2lf %.0lf %.2lf %.4lf' % \
-            (ts, s['J'], s['P'], s['PF'])
+        #str = '%.2lf %.0lf %.2lf %.4lf' % \
+        #    (ts, s['J'], s['P'], s['PF'])
+        str = '%.2lf %.2lf' % \
+            (ts, s['P'])
         print >>f, str
         f.flush()
 
