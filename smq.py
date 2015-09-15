@@ -23,18 +23,17 @@ class producer:
         self.dict = {}
         self.dq = deque()
 
-        self.stopflag = False
-
         self.timeoutsec = 0.5 # timeout for select
-
         self.seq = 0
+        self.debug = 0
 
     def start(self):
-        self.t = threading.Thread(target = self.handler, args = [])
+        self.stop_ev = threading.Event()
+        self.t = threading.Thread(target = self.handler, args = [self.stop_ev])
         self.t.start()
 
     def stop(self):
-        self.stopflag = True
+        self.stop_ev.set()
 
     def active(self):
         return self.t.isAlive()
@@ -45,9 +44,20 @@ class producer:
         while len(self.dq) >= self.maxdq:
             self.popleft()
 
-    def dispatcher(self, c, s):
-        while self.stopflag == False:
-            buf = c.recv(256)
+    def dispatcher(self, c, s, stop_ev):
+        while not stop_ev.is_set():
+            try:
+                buf = c.recv(256)
+            except socket.error, e:
+                if e.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
+                    stop_ev.wait(self.timeoutsec)
+                    continue
+                else:
+                    print e
+                    break
+                
+            # buf should be available for read
+
             if len(buf) <= 0:
                 # it is likely that the client closed
                 # the connection, so let's quite the loop
@@ -59,7 +69,8 @@ class producer:
                 continue
             cmd = d['cmd']
             if len(cmd) > 0:
-                print 'cmd', cmd, len(self.dq)
+                if self.debug > 0:
+                    print 'cmd', cmd, len(self.dq)
                 if cmd == 'quit':
                     break
                 if cmd == 'cfg' :
@@ -85,17 +96,18 @@ class producer:
                     ret['len'] = len(self.dq)
                     c.send(json.dumps(ret))
 
-    def handler(self):
+    def handler(self, stop_ev):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setblocking(0)
 
         s.bind((self.ip, self.port))
         s.listen(1) # accept only connection to simplify
 
-        while self.stopflag == False:
+        while not stop_ev.is_set():
             r = select.select([s], [], [], self.timeoutsec)
             if r[0]:
                 c, addr = s.accept()
-                self.dispatcher(c, s)
+                self.dispatcher(c, s, stop_ev)
 
         s.close()
         self.stopflag = False

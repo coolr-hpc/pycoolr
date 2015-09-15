@@ -195,6 +195,7 @@ if __name__ == '__main__':
         if kp.available() and kp.readkey() == 'q':
             break
 
+    mq.stop()
     kp.disable()
 
     print 'terminated.'
