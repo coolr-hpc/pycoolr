@@ -11,6 +11,9 @@
 
 import re, os, sys
 import time
+import smq
+import keypress
+import json
 
 class coolr_wt310_reader:
 
@@ -93,7 +96,8 @@ def usage():
     print ''
     print '-i int : sampling interval in sec'
     print '-c str : command string'
-    print '-o str : output string'
+    print '-o str : output filename'
+    print '-s str : start the mq producer. str is ip address'
     print ''
 
 if __name__ == '__main__':
@@ -101,8 +105,10 @@ if __name__ == '__main__':
     interval_sec = .5
     cmd = ''
     outputfn = ''
+    smqflag = False
+    ipaddr = ''
 
-    shortopt = "hi:c:o:"
+    shortopt = "hi:c:o:s:"
     longopt = []
     try:
         opts, args = getopt.getopt(sys.argv[1:], 
@@ -122,6 +128,9 @@ if __name__ == '__main__':
             cmd = a
         elif o in ('-o'):
             outputfn = a
+        elif o in ('-s'):
+            smqflag = True
+            ipadr = a
         else:
             print 'Unknown:', o, a
             
@@ -148,16 +157,44 @@ if __name__ == '__main__':
 
         print 'Writing to', outputfn
 
+    cfg = {}
+    cfg["c1"] = {"label":"Time","unit":"Sec"}
+    cfg["c2"] = {"label":"Energy","unit":"Joules"}
+    cfg["c3"] = {"label":"Power", "unit":"Watt"}
+    cfg["c4"] = {"label":"Power Factor", "unit":""}
+
+
+    print >>f, json.dumps(cfg)
+
+    if smqflag:
+        mq = smq.producer(ipaddr)
+        mq.start()
+        mq.dict = cfg
+        print 'Message queue is started:', ipaddr
+
+    kp = keypress.keypress()
+    kp.enable()
+    print 'Press "q" to terminate'
+
     while True:
         wt310.start()
 
         s = wt310.sample()
 
-        print >>f, '%.2lf' % time.time(),
-        print >>f, '%.0lf' % s['J'],
-        print >>f, '%.2lf' % s['P'],
-        print >>f, '%.4lf' % s['PF'],
-        print >>f, ''
+        ts = time.time()
+        str = '%.2lf %.0lf %.2lf %.4lf' % \
+            (ts, s['J'], s['P'], s['PF'])
+        print >>f, str
         f.flush()
 
+        if smqflag:
+            mq.append(str)
+
         time.sleep(interval_sec)
+
+        if kp.available() and kp.readkey() == 'q':
+            break
+
+    kp.disable()
+
+    print 'terminated.'
