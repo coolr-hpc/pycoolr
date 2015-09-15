@@ -8,7 +8,7 @@
 import os, sys, re, time
 
 # local
-from coolr_misc import *
+from clr_misc import *
 
 #
 # Once instantiated, the following values are avaialble

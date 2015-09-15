@@ -24,11 +24,11 @@ import signal
 
 # local
 import keypress
-import coolr_rapl
-import coolr_hwmon
-import coolr_cpuinfo
+import clr_rapl
+import clr_hwmon
+import clr_cpuinfo
 
-from coolr_misc import *
+from clr_misc import *
 
 #
 #
@@ -163,10 +163,10 @@ class coolrmon_tracer:
         self.intervalsec = 1
         self.logger = self.defaultlogger
         # instantiate class
-        self.ctr = coolr_hwmon.coretemp_reader()
-        self.rapl = coolr_rapl.rapl_reader()
-        self.oc = coolr_cpuinfo.osconfig()
-        self.ct = coolr_cpuinfo.cputopology()
+        self.ctr = clr_hwmon.coretemp_reader()
+        self.rapl = clr_rapl.rapl_reader()
+        self.oc = clr_cpuinfo.osconfig()
+        self.ct = clr_cpuinfo.cputopology()
 
     def showconfig(self):
         s  = '{"kernelversion":"%s"' % self.oc.version

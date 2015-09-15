@@ -15,7 +15,7 @@ import smq
 import keypress
 import json
 
-class coolr_wt310_reader:
+class wt310_reader:
 
     def __init__(self):
         self.fd = -1
@@ -90,7 +90,7 @@ import getopt
 
 def usage():
     print ''
-    print 'Usage: coolr_wt310.py [options]'
+    print 'Usage: coolrs_wt310.py [options]'
     print ''
     print '[options]'
     print ''
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     #
     #
 
-    wt310 = coolr_wt310_reader()
+    wt310 = wt310_reader()
 
     if wt310.open():
         sys.exit(1)

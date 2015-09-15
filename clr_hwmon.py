@@ -9,7 +9,7 @@
 
 import re, os, sys
 import numpy as np
-from coolr_cpuinfo import *
+from clr_cpuinfo import *
 
 class coretemp_reader :
     def parse_pkgtemp(self,fn):
