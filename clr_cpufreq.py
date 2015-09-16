@@ -111,6 +111,9 @@ class cpufreq_reader:
             [cpustatvals(i) for i in self.cpus] ]
 
     def sample(self):
+        if not self.init:
+            return
+
         idx = self.cnt % 2
         for cpuid in self.cpus:
             self.samples[idx][cpuid].parse()
@@ -118,6 +121,8 @@ class cpufreq_reader:
 
     def pstate(self):
         ret = [0.0 for i in self.cpus]
+        if not self.init:
+            return ret
         if self.cnt == 0:
             return ret
 
@@ -131,6 +136,8 @@ class cpufreq_reader:
 
     def cpufreq(self):
         ret = [0.0 for i in self.cpus]
+        if not self.init:
+            return ret
         if self.cnt < 2:
             return ret
 
@@ -148,6 +155,8 @@ class cpufreq_reader:
 
     def aperf(self):
         ret = [0.0 for i in self.cpus]
+        if not self.init:
+            return ret
         if self.cnt < 2:
             return ret
 
@@ -167,6 +176,9 @@ class cpufreq_reader:
 if __name__ == '__main__':
 
     freq = cpufreq_reader()
+    if not freq.init:
+        print 'Please check the cpustat module is installed'
+        sys.exit(1)
 
     for i in range(0, 20):
         freq.sample()
