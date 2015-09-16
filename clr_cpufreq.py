@@ -74,6 +74,16 @@ class cpustatvals:
 
         return freq
 
+    def calc_aperf(self,prev): # prev is an object of cpustatvals
+        if not (prev.d.has_key('tsc') and self.d.has_key('tsc')):
+                    return 0.0
+        tmp = {}
+        k = 'aperf'
+        tmp[k] = float(self.diff_u64(self.d[k], prev.d[k]))
+
+        dt = self.d['time'] - prev.d['time']
+        return tmp['aperf'] * 1e-9 / dt
+
 
 class cpufreq_reader:
 
@@ -106,7 +116,20 @@ class cpufreq_reader:
             self.samples[idx][cpuid].parse()
         self.cnt = self.cnt + 1
 
-    def cpufreqs(self):
+    def pstate(self):
+        ret = [0.0 for i in self.cpus]
+        if self.cnt == 0:
+            return ret
+
+        idx = 0 # if cnt is an odd number
+        if self.cnt % 2 == 0:
+            idx = 1
+        for cpuid in self.cpus:
+            ret[cpuid] = self.samples[idx][cpuid].d['pstate']
+
+        return ret
+
+    def cpufreq(self):
         ret = [0.0 for i in self.cpus]
         if self.cnt < 2:
             return ret
@@ -123,14 +146,46 @@ class cpufreq_reader:
 
         return ret
 
+    def aperf(self):
+        ret = [0.0 for i in self.cpus]
+        if self.cnt < 2:
+            return ret
+
+        idxprev = 0
+        idxcur = 1
+        if (self.cnt % 2) == 1:
+            idxprev = 1
+            idxcur = 0
+
+        for cpuid in self.cpus:
+            ret[cpuid] = self.samples[idxcur][cpuid].calc_aperf(
+                self.samples[idxprev][cpuid])
+
+        return ret
+
+
 if __name__ == '__main__':
 
     freq = cpufreq_reader()
 
-    for i in range(0, 10):
+    for i in range(0, 20):
         freq.sample()
-        for f in freq.cpufreqs():
-            print '%.1lf ' % f,
+
+        print '[pstate]',
+        for p in freq.pstate():
+            print p,
         print
-        time.sleep(.5)
+
+        print '[freq]',
+        for f in freq.cpufreq():
+            print '%.2lf ' % f,
+        print
+
+        print '[aperf]',
+        for f in freq.aperf():
+            print '%.2lf ' % f,
+        print
+
+        print
+        time.sleep(1)
         
