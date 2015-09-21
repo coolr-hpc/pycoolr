@@ -85,9 +85,26 @@ class cputopology:
 
 
 class osconfig :
-    def getpstate(self):
-        d="/sys/devices/system/cpu/intel_pstate"
-        if os.access(d, os.R_OK) :
+
+    def update(self):
+        tmp = readbuf( '/proc/version' )
+        self.version = tmp.split()[2]
+
+        # assume that all cpu have the same setting for this experiment
+        self.driver = ''
+        d = '/sys/devices/system/cpu/cpu0/cpufreq'
+        if os.path.exists(d):
+            self.freqdriver = 'acpi_cpufreq'
+            fn = d + "/scaling_driver"
+            self.driver = readbuf( fn ).rstrip()
+            fn = d + "/scaling_governor"
+            self.governor = readbuf( fn ).rstrip()
+            fn = d + "/scaling_cur_freq"
+            self.cur_freq = readbuf( fn ).rstrip()
+
+        d = "/sys/devices/system/cpu/intel_pstate"
+        if os.path.exists(d):
+            self.freqdriver = 'pstate'
             k = 'max_perf_pct'
             pmax = readbuf( "%s/%s" % (d,k) ).rstrip()
             k = 'min_perf_pct'
@@ -96,19 +113,10 @@ class osconfig :
             noturbo = readbuf( "%s/%s" % (d,k) ).rstrip()
             self.pstate = "%s/%s/%s" % (pmax,pmin,noturbo)
 
-    def update(self):
-        tmp = readbuf( '/proc/version' )
-        self.version = tmp.split()[2]
-
-        # assume that all cpu have the same setting for this experiment
-        fn = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_driver"
-        self.driver = readbuf( fn ).rstrip()
-        fn = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-        self.governor = readbuf( fn ).rstrip()
-        fn = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
-        self.cur_freq = readbuf( fn ).rstrip()
-
-        self.getpstate()
+        d = "/sys/devices/system/cpu/turbofreq"
+        if os.path.exists(d):
+            self.freqdriver = 'coolrfreq'
+            self.policy = d + '/pstate_policy'
 
     def __init__ (self):
         self.update()
@@ -138,7 +146,7 @@ def  testosconfig():
 
     oc = osconfig()
     print oc.version
-
+    print oc.freqdriver
     print
 
 def testcputopology():
