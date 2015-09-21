@@ -107,6 +107,12 @@ class coretemp_reader :
             for c in temps[pkgid].keys():
                 vals.append(temps[pkgid][c])
         return np.max(vals)
+
+    def getpkgstats(self, temps, pkgid):
+        vals = []
+        for c in temps[pkgid].keys():
+            vals.append(temps[pkgid][c])
+        return [np.mean(vals), np.std(vals), np.min(vals), np.max(vals)]
                     
     def readpkgtemp(self):
         fn = "%s_input" % self.pkgtempfns[pkgid].pkgfn
@@ -166,7 +172,15 @@ if __name__ == '__main__':
         temp = ctr.readtempall()
         maxcoretemp = ctr.getmaxcoretemp(temp)
         b = time.time()
-        print '  %.1f msec, maxcoretemp=%d' % ((b-a)*1000.0, maxcoretemp)
+        print '  %.1f msec, maxcoretemp=%d' % ((b-a)*1000.0, maxcoretemp),
+
+        for p in sorted(temp.keys()):
+            s = ctr.getpkgstats(temp, p)
+            print ' mean=%.2lf std=%.2lf min=%.1lf max=%.1lf' % \
+                (s[0], s[1], s[2], s[3]),
+
+        print
+
         time.sleep(1)
 
     print
