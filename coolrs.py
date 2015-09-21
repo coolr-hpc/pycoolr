@@ -186,8 +186,8 @@ class coolrmon_tracer:
                     firstitem = False
                 else:
                     s += ','
-                    s += '"p%d":%d' % (p, self.rapl.max_energy_range_uj_d[k])
-                s += '}'
+                s += '"p%d":%d' % (p, self.rapl.max_energy_range_uj_d[k])
+            s += '}'
 
         self.logger(s)
 
@@ -295,7 +295,7 @@ class log2file:
 if __name__ == '__main__':
 
     shortopt = "hC:i:o:"
-    longopt = ['runtests', 'cooldown=', 'interval=', 'output=']
+    longopt = ['runtests', 'cooldown=', 'interval=', 'output=', 'sample', 'info' ]
     try:
         opts, args = getopt.getopt(sys.argv[1:], 
                                    shortopt, longopt)
@@ -305,6 +305,7 @@ if __name__ == '__main__':
         usage()
         sys.exit(1)
 
+    cmd = ''
     tr = coolrmon_tracer()
 
     for o, a in opts:
@@ -324,8 +325,16 @@ if __name__ == '__main__':
         elif o in ("-o", "--output"):
             l = log2file(a)
             tr.setlogger(l.logger)
+        elif o in ("--sample"):
+            tr.sample_temp('sample')
+            tr.sample_energy('sample')
+            sys.exit(0)
+        elif o in ("--info"):
+            tr.showconfig()
+            sys.exit(0)
         else:
             print 'Unknown:', o, a
+            sys.exit(1)
     #
     #
 
