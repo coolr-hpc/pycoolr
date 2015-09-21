@@ -48,20 +48,21 @@ def usage():
 class coolrmon_tracer:
     def sample_temp(self,label):
         temp = self.ctr.readtempall()
-
         # constructing a json output
         s  = '{"sample":"temp", "time":%.3f' % (time.time())
-        s += ',"label"="%s"' % label
+        s += ',"label":"%s"' % label
         for p in sorted(temp.keys()):
             s += ',"p%d":{' % p
 
-            firstitem = True
+            pstat = self.ctr.getpkgstats(temp, p)
+
+            s += '"mean":%.2lf, ' % pstat[0]
+            s += '"std":%.2lf, ' % pstat[1]
+            s += '"min":%.2lf, ' % pstat[2]
+            s += '"max":%.2lf, ' % pstat[3]
+            
             for c in sorted(temp[p].keys()):
-                if firstitem:
-                    s += '"%s":%d' % (c, temp[p][c])
-                    firstitem = False
-                else:
-                    s += ',"%s":%d' % (c, temp[p][c])
+                s += ',"%s":%d' % (c, temp[p][c])
             s += '}'
         s += '}'
 
@@ -121,7 +122,7 @@ class coolrmon_tracer:
 
         # constructing a simple output
         s  = '{"sample":"energy","time":%.3f' % (e['time'])
-        s += ',"label"="%s"' % label
+        s += ',"label":"%s"' % label
         for k in sorted(e.keys()):
             if k != 'time':
                 s += ',"%s":%d' % ( self.rapl.shortenkey(k), e[k])
@@ -170,9 +171,11 @@ class coolrmon_tracer:
 
     def showconfig(self):
         s  = '{"kernelversion":"%s"' % self.oc.version
-        s += ',"cpufreq_driver":"%s"' % self.oc.driver
-        s += ',"cpufreq_governor":"%s"' % self.oc.governor
-        s += ',"cpufreq_cur_freq":%s' % self.oc.cur_freq
+        s += ',"freqdriver":"%s"' % self.oc.freqdriver
+
+        #add detailed params later
+        #s += ',"cpufreq_governor":"%s"' % self.oc.governor
+        #s += ',"cpufreq_cur_freq":%s' % self.oc.cur_freq
 
         npkgs = len(self.ct.pkgcpus.keys())
         s += ',"npkgs":%d' % npkgs
@@ -188,6 +191,7 @@ class coolrmon_tracer:
                     s += ','
                 s += '"p%d":%d' % (p, self.rapl.max_energy_range_uj_d[k])
             s += '}'
+        s += '}'
 
         self.logger(s)
 
