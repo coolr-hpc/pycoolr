@@ -123,10 +123,10 @@ class amperf_reader :
         if not self.init:
             return ''
 
-        amp.sample()
-        d = amp.getdiff()
-        f = amp.getavgGHz(d)
-        s = amp.getpkgstats(f)
+        self.sample()
+        d = self.getdiff()
+        f = self.getavgGHz(d)
+        s = self.getpkgstats(f)
 
         buf = '{'
         for kp in f.keys():
