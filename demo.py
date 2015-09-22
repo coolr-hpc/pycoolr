@@ -135,7 +135,7 @@ for i in range(0, npkgs):
 
 sample = querydataj("--sample")
 s_temp = sample[0]
-s_energy = sample[1]
+s_energy = sample[1]["energy"]
 s_freq = sample[2]
 
 # to calculate the average power we need the previous value
@@ -159,7 +159,8 @@ while True:
     
     sample = querydataj("--sample")
     s_temp = sample[0]
-    s_energy = sample[1]
+    s_energy = sample[1]["energy"]
+    s_powercap = sample[1]["powercap"]
     s_freq = sample[2]
     if len(sample) == 4:
         s_acpi = sample[3]
@@ -216,8 +217,7 @@ while True:
             #print 'drampower%d=%lf' % (i, powerwatt), 
 
         plimqs[i].popleft()
-        # XXX
-        # plimqs[i].append(d[p]['powerlimit'])
+        plimqs[i].append(s_powercap[p])
 
 
     if config["drawexternal"] == "yes":
@@ -287,11 +287,7 @@ while True:
 
     l_uptime=list(uptimeq)
     for pkgid in range(0, npkgs):
-
-        #XXX
-#        plt.plot(l_uptime, list(plimqs[pkgid]), scaley=False, color='red' )
-
-
+        plt.plot(l_uptime, list(plimqs[pkgid]), scaley=False, color='red' )
         l_powerqs=list(powerqs[pkgid])
         plt.plot(l_uptime, l_powerqs, scaley=False, label='PKG%d'%pkgid, color=cnames[pkgid] )
 
@@ -446,11 +442,11 @@ while True:
 #        plt.text( 0.1, ypos(l), 'Current freq. : %s Hz' % info['cpufreq_cur_freq'] )
 
     l += 1
-# XXX
-#    l += 1
-#    plt.text( 0.1, ypos(l), 'Power limit pkg0 : %d Watt' % d['pkg0']['powerlimit'] )
-#    l += 1
-#    plt.text( 0.1, ypos(l), 'Power limit pkg1 : %d Watt' % d['pkg1']['powerlimit'] )
+
+    l += 1
+    plt.text( 0.1, ypos(l), 'Powewcap pkg0 : %d Watt' % s_powercap['p0'] )
+    l += 1
+    plt.text( 0.1, ypos(l), 'Powercap pkg1 : %d Watt' % s_powercap['p1'] )
 
     l += 1
     l += 1
