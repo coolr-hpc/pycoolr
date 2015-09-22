@@ -1,2 +1,4 @@
-- coolrs.py reads the RAPL power limit and draw the limit line in
-  demo.py
+- ctl_rapl: clean up the total energy tracking code
+- ctl_nodeinfo: hyperthread detection
+
+
