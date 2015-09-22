@@ -110,9 +110,10 @@ if __name__ == '__main__':
 
     cmdmode = ''
     cmd = ''
+    samplemode = False
 
     shortopt = "hi:o:s:"
-    longopt = ["set=", "get="]
+    longopt = ["set=", "get=", "sample"]
     try:
         opts, args = getopt.getopt(sys.argv[1:], 
                                    shortopt, longopt)
@@ -127,6 +128,8 @@ if __name__ == '__main__':
             sys.exit(0)
         elif o in ('-i'):
             interval_sec = float(a)
+        elif o in ('--sample'):
+            samplemode = True
         elif o in ('--set'):
             cmdmode = 'set'
             cmd = a
@@ -148,6 +151,14 @@ if __name__ == '__main__':
 
     if wt310.open():
         sys.exit(1)
+
+    if samplemode:
+        s = wt310.sample()
+        ts = time.time()
+        str = '{"sample":"wt310", "time":%.2lf, "power":%.2lf}' % \
+            (ts, s['P'])
+        print str
+        sys.exit(0)
 
     if len(cmd) > 0:
         if cmdmode == 'set':

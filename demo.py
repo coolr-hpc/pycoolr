@@ -27,8 +27,7 @@ with open(configfile) as f:
 
 print 'Config :', configfile
     
-drawacpipwr = False
-dramrapl = False
+
 plotapp = False
 maxpoints = 360
 interval = 1
@@ -75,6 +74,22 @@ def querydataj(cmd=''):
     f.close()
 
     return ret
+
+
+def queryexternalj(cmd=''):
+    f = os.popen("%s %s" % (config["external"],cmd), "r")
+    ret = [] # return an array of dict objects
+
+    while True:
+        l = f.readline()
+        if not l:
+            break
+        ret.append(json.loads(l))
+        logf.write(l)
+    f.close()
+
+    return ret
+
 #
 #
 
@@ -88,7 +103,7 @@ nans = [ np.nan for i in range(0,maxpoints) ]
 uptimeq = deque(nans)
 
 #
-acpipwrq = deque(nans)
+acpwrq = deque(nans)
 
 # 
 meanqs  = [ deque(nans) for i in range(0,npkgs) ]
@@ -120,7 +135,7 @@ for i in range(0, npkgs):
 
 sample = querydataj("--sample")
 s_temp = sample[0]
-s_energy = sample[1]
+s_energy = sample[1]["energy"]
 s_freq = sample[2]
 
 # to calculate the average power we need the previous value
@@ -130,18 +145,29 @@ prev_t = start_t
 for i in range(0, npkgs):
     k = 'p%d' % i
     prev_e[i] = s_energy[k]
-    if dramrapl:
+    if config["dramrapl"] == "yes":
         k = 'p%d/dram' % i
-        prev_dram_e[i] = d[k]
+        prev_dram_e[i] = s_energy[k]
 
 cnames= [ 'blue', 'green' ]
 
+
 while True:
+    #
+    # querying
+    #
+    
     sample = querydataj("--sample")
     s_temp = sample[0]
-    s_energy = sample[1]
+    s_energy = sample[1]["energy"]
+    s_powercap = sample[1]["powercap"]
     s_freq = sample[2]
+    if len(sample) == 4:
+        s_acpi = sample[3]
 
+    #
+    #
+    
     cur_t = s_temp['time']
     rel_t =  cur_t - start_t 
     uptimeq.popleft()
@@ -161,7 +187,7 @@ while True:
         stdqs[i].append(vs)
 
         fm = s_freq[p]['mean']
-        print 'freq', fm
+
         freq_meanqs[i].popleft()
         freq_meanqs[i].append(fm) 
 
@@ -170,15 +196,15 @@ while True:
         if edelta < 0 :
             edelta += maxenergyuj[i]
         tdelta = cur_t - prev_t
-        print cur_t, prev_t
+        #print cur_t, prev_t
         powerwatt = edelta / (1000*1000.0) / tdelta
         totalpower=totalpower+powerwatt
         powerqs[i].popleft()
         powerqs[i].append(powerwatt)
         prev_e[i] = cur_pkg_e
-        print 'pkgpower%d=%lf' % (i, powerwatt), 
+        #print 'pkgpower%d=%lf' % (i, powerwatt), 
 
-        if dramrapl:
+        if config["dramrapl"]:
             cur_dram_e = s_energy[p + '/dram']
             edelta = cur_dram_e - prev_dram_e[i]
             if edelta < 0 :
@@ -188,18 +214,22 @@ while True:
             drampowerqs[i].popleft()
             drampowerqs[i].append(powerwatt)
             prev_dram_e[i] = cur_dram_e
-            print 'drampower%d=%lf' % (i, powerwatt), 
+            #print 'drampower%d=%lf' % (i, powerwatt), 
 
         plimqs[i].popleft()
-        # XXX
-        # plimqs[i].append(d[p]['powerlimit'])
+        plimqs[i].append(s_powercap[p])
 
 
-    if drawacpipwr : 
-        acpipwrq.popleft()
-        acpipwrq.append( d['acpipwr'] )
+    if config["drawexternal"] == "yes":
+        s_ac = queryexternalj("--sample")[0]
+        acpwrq.popleft()
+        acpwrq.append(float(s_ac["power"]))
 
-    print 'totalpower=%lf' % totalpower
+    if config["drawacpipwr"] == "yes" :
+        acpwrq.popleft()
+        acpwrq.append(s_acpi['power'])
+
+    # print 'totalpower=%lf' % totalpower
     totalpowerqs.popleft()
     totalpowerqs.append( totalpower )
 
@@ -231,22 +261,22 @@ while True:
     plt.ylabel('Core temperature [C]')
 
     #
-    #
-    if drawacpipwr: 
+    # assume drawacpipwr and drawexternal is exclusive
+    if config["drawacpipwr"] == "yes" or config["drawexternal"]: 
         plt.subplot(2,4,subplotidx)
         subplotidx = subplotidx + 1
         plt.axis([rel_t - maxpoints*interval, rel_t, 20, 600]) # [xmin,xmax,ymin,ymax]
 
         l_uptime=list(uptimeq)
 
-        l_acpipwrqs=list(acpipwrq)
-        plt.plot(l_uptime, l_acpipwrqs, 'k', scaley=False)
+        l_acpwrqs=list(acpwrq)
+        plt.plot(l_uptime, l_acpwrqs, 'k', scaley=False)
 
         l_totalpowerqs=list(totalpowerqs)
         plt.plot(l_uptime, l_totalpowerqs, 'k--', scaley=False )
 
         plt.xlabel('Uptime [S]')
-        plt.ylabel('Power [W] - ACPI and RAPL total')
+        plt.ylabel('Power [W] - AC Power and RAPL total')
 
     #
     #
@@ -257,15 +287,11 @@ while True:
 
     l_uptime=list(uptimeq)
     for pkgid in range(0, npkgs):
-
-        #XXX
-#        plt.plot(l_uptime, list(plimqs[pkgid]), scaley=False, color='red' )
-
-
+        plt.plot(l_uptime, list(plimqs[pkgid]), scaley=False, color='red' )
         l_powerqs=list(powerqs[pkgid])
         plt.plot(l_uptime, l_powerqs, scaley=False, label='PKG%d'%pkgid, color=cnames[pkgid] )
 
-        if dramrapl: 
+        if config["dramrapl"] == "yes": 
             l_drampowerqs=list(drampowerqs[pkgid])
             plt.plot(l_uptime, l_drampowerqs, scaley=False, label='DRAM%d'%pkgid, color=cnames[pkgid], ls='-' )
 
@@ -287,6 +313,25 @@ while True:
     plt.xlabel('Uptime [S]')
     plt.ylabel('CPU Frequency [GHz]')
 
+    #
+    # freq bar graph
+    # XXX: quick dirty for now
+    plt.subplot(2,4,subplotidx)
+    subplotidx = subplotidx + 1
+    nbars = config["ncpu"]*4
+    plt.axis([0, nbars , config["freqmin"], config["freqmax"]])
+
+    offset = 0
+    for pkgid in range(0, npkgs):
+        ind = np.arange(nbars/2) + offset
+        tmpy = []
+        p = 'p%d' % pkgid
+        for kc in sorted(s_freq[p].keys()):
+            if kc[0] == 'c':
+                tmpy.append(s_freq[p][kc])
+                offset += 1
+        plt.bar( ind, tmpy, width = .5, color=cnames[pkgid] )
+                
     #
     # app
 
@@ -341,60 +386,19 @@ while True:
     #
     # cmap
     #
-#    for pkgid in range(0, 2): # this only works with dual sockets
-    if False: # skip now
+    for pkgid in range(0, 2): # this only works with dual sockets
         plt.subplot(2,4,subplotidx+pkgid)
 
         pn = 'p%d' % pkgid
-        pkgtemp = float( s_temp[pn]['pkg'] )
         A = []
-        if target in ( 'tritos', 'tritos-w' ) :
-#            # three column version
-#            for i in range(0,7):
-#                tmp = []
-#                if i==0: 
-#                    tmp.append(pkgtemp)
-#                    tmp.append(np.nan)
-#                    tmp.append(np.nan)
-#                else:
-#                    tmp.append( float( d[pn]['temp%d'%( (i-1) +  0  + ncpu*pkgid)] ) ) # left
-#                    tmp.append( float( d[pn]['temp%d'%( (i-1) +  6  + ncpu*pkgid)] ) ) # left
-#                    tmp.append( float( d[pn]['temp%d'%( (i-1) + 12  + ncpu*pkgid)] ) ) # left
-#                A.append(tmp)
-
-            # four column version
-            perpkg = 10000;
-            empty = -1;
-            cpuidlookup = ( ( perpkg, empty, empty,  empty ), 
-                            ( 0, 4,  8, 12 ),
-                            ( 1, 5,  9, 13 ),
-                            ( 2, 6, 10, 14 ),
-                            ( 3, 7, 11, 15 ),
-                            ( empty, empty, empty,  16 ),
-                            ( empty, empty, empty,  17 ) )
-
-            for r in cpuidlookup:
-                tmp = []
-                for c in r :
-                    if c == perpkg :
-                        tmp.append(pkgtemp)
-                    elif c == empty:
-                        tmp.append(np.nan)
-                    else:
-                        tmp.append( float( d_temp[pn]['temp%d'%(c+18*pkgid)] ) )
-                A.append(tmp)
-
-        elif target in ( 'duteros', 'duteros-w' ) :
-            for i in range(0,5):
-                tmp = []
-                if i==0: 
-                    tmp.append(pkgtemp)
-                    tmp.append(np.nan)
+        for r in config["tempmap"]:
+            tmp = []
+            for c in r :
+                if c == -1:
+                    tmp.append(s_temp[pn]['pkg'])
                 else:
-                    tmp.append( float( d[pn]['temp%d'%( (i-1) + 0  + ncpu*pkgid)] ) ) # left
-                    tmp.append( float( d[pn]['temp%d'%( (i-1) + 4  + ncpu*pkgid)] ) ) # right
-                A.append(tmp)
-
+                    tmp.append(s_temp[pn]['%d' % c])
+            A.append(tmp)
 
         ax = plt.gca()
         cax = ax.imshow(A, cmap=cm.jet , vmin=config["mintemp"], vmax=config["maxtemp"] ,aspect=0.7, interpolation='none') # interpolation='nearest' 
@@ -438,11 +442,11 @@ while True:
 #        plt.text( 0.1, ypos(l), 'Current freq. : %s Hz' % info['cpufreq_cur_freq'] )
 
     l += 1
-# XXX
-#    l += 1
-#    plt.text( 0.1, ypos(l), 'Power limit pkg0 : %d Watt' % d['pkg0']['powerlimit'] )
-#    l += 1
-#    plt.text( 0.1, ypos(l), 'Power limit pkg1 : %d Watt' % d['pkg1']['powerlimit'] )
+
+    l += 1
+    plt.text( 0.1, ypos(l), 'Powewcap pkg0 : %d Watt' % s_powercap['p0'] )
+    l += 1
+    plt.text( 0.1, ypos(l), 'Powercap pkg1 : %d Watt' % s_powercap['p1'] )
 
     l += 1
     l += 1

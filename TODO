@@ -1,0 +1,2 @@
+- coolrs.py reads the RAPL power limit and draw the limit line in
+  demo.py

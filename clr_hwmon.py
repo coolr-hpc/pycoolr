@@ -134,25 +134,54 @@ class coretemp_reader :
         return t
 
 
+class acpi_power_meter_reader :
+    # add a nicer detection routine later
+    def __init__(self):
+        self.init = False
+        fn = '/sys/class/hwmon/hwmon0/device/power1_average'
+        if os.path.exists(fn):
+            self.init = True
 
-class acpi_power_meterp_reader :
+    def initialized(self):
+        return self.init
+
     def read(self):
+        if not self.init:
+            return -1
+            
         retval=-1
-        fn = '/sys/class/hwmon/hwmon1/device/power1_average'
+
+        fn = '/sys/class/hwmon/hwmon0/device/power1_average'
         try:
             f = open(fn , "r")
         except:
             return retval
 
         l = f.readline()
-        retval = int(l) / 1000.0 / 1000.0  # uW to W
+        retval = int(l) * 1e-6 # uW to W
         f.close()
         return retval
+
+    def sample_and_json(self):
+        if not self.init:
+            return ''
+
+        pwr = self.read()
+        buf = '{"sample":"acpi",'
+        buf += '"power":%.2lf}' % pwr
+
+        return buf
 
 
 if __name__ == '__main__':
 
-#    print '=== ', sys._getframe().f_code.co_name
+
+
+    acpipwr = acpi_power_meter_reader()
+
+    if acpipwr.initialized():
+        print acpipwr.sample_and_json()
+
     ctr = coretemp_reader()
 
     temp = ctr.readtempall()
