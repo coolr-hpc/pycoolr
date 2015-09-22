@@ -50,6 +50,9 @@ class amperf_reader :
         return ret
 
     def sample(self):
+        if not self.init:
+            return None
+
         self.samples[self.sidx] = self.read()
 
         if self.sidx == 0:
@@ -66,6 +69,9 @@ class amperf_reader :
         return 0
 
     def getdiff(self):
+        if not self.init:
+            return None
+
         d = {}
         f = self.samples[self.firstidx()]
         s = self.samples[self.secondidx()]
@@ -84,6 +90,9 @@ class amperf_reader :
         return d
 
     def getavgGHz(self, d):
+        if not self.init:
+            return None
+
         ret = {}
         dt = d['time']
 
@@ -97,6 +106,9 @@ class amperf_reader :
         return ret
 
     def getpkgstats(self, p):
+        if not self.init:
+            return None
+
         ret = {}
 
         for k in p.keys():
@@ -105,23 +117,32 @@ class amperf_reader :
                 tmp.append(p[k][c])
 
             ret[k] = [np.mean(tmp), np.std(tmp), np.min(tmp), np.max(tmp)]
-
         return ret
 
+    def sample_and_json(self):
+        if not self.init:
+            return ''
+
+        amp.sample()
+        d = amp.getdiff()
+        f = amp.getavgGHz(d)
+        s = amp.getpkgstats(f)
+
+        buf = '{'
+        for kp in f.keys():
+            buf += '"%s":{' % kp
+            buf += '"mean":%.2lf,"std":%.2lf' % (s[kp][0], s[kp][1])
+            for kc in f[kp].keys():
+                buf += ',"%s":%.2lf' % (kc,f[kp][kc])
+            buf += '}'
+        buf += '}'
+        return buf
 
 if __name__ == '__main__':
 
     amp = amperf_reader()
 
     while True:
-        amp.sample()
-        d = amp.getdiff()
-        f = amp.getavgGHz(d)
-        for kp in f.keys():
-            for kc in f[kp].keys():
-                print '%.2lf' % f[kp][kc],
-            print '    ',
-        print ''
+        print amp.sample_and_json()
 
-        time.sleep(1)
-
+        time.sleep(.5)

@@ -56,10 +56,10 @@ class coolrmon_tracer:
 
             pstat = self.ctr.getpkgstats(temp, p)
 
-            s += '"mean":%.2lf, ' % pstat[0]
-            s += '"std":%.2lf, ' % pstat[1]
-            s += '"min":%.2lf, ' % pstat[2]
-            s += '"max":%.2lf, ' % pstat[3]
+            s += '"mean":%.2lf ' % pstat[0]
+            s += ',"std":%.2lf ' % pstat[1]
+            s += ',"min":%.2lf ' % pstat[2]
+            s += ',"max":%.2lf ' % pstat[3]
             
             for c in sorted(temp[p].keys()):
                 s += ',"%s":%d' % (c, temp[p][c])
