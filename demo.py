@@ -390,60 +390,19 @@ while True:
     #
     # cmap
     #
-#    for pkgid in range(0, 2): # this only works with dual sockets
-    if False: # skip now
+    for pkgid in range(0, 2): # this only works with dual sockets
         plt.subplot(2,4,subplotidx+pkgid)
 
         pn = 'p%d' % pkgid
-        pkgtemp = float( s_temp[pn]['pkg'] )
         A = []
-        if target in ( 'tritos', 'tritos-w' ) :
-#            # three column version
-#            for i in range(0,7):
-#                tmp = []
-#                if i==0: 
-#                    tmp.append(pkgtemp)
-#                    tmp.append(np.nan)
-#                    tmp.append(np.nan)
-#                else:
-#                    tmp.append( float( d[pn]['temp%d'%( (i-1) +  0  + ncpu*pkgid)] ) ) # left
-#                    tmp.append( float( d[pn]['temp%d'%( (i-1) +  6  + ncpu*pkgid)] ) ) # left
-#                    tmp.append( float( d[pn]['temp%d'%( (i-1) + 12  + ncpu*pkgid)] ) ) # left
-#                A.append(tmp)
-
-            # four column version
-            perpkg = 10000;
-            empty = -1;
-            cpuidlookup = ( ( perpkg, empty, empty,  empty ), 
-                            ( 0, 4,  8, 12 ),
-                            ( 1, 5,  9, 13 ),
-                            ( 2, 6, 10, 14 ),
-                            ( 3, 7, 11, 15 ),
-                            ( empty, empty, empty,  16 ),
-                            ( empty, empty, empty,  17 ) )
-
-            for r in cpuidlookup:
-                tmp = []
-                for c in r :
-                    if c == perpkg :
-                        tmp.append(pkgtemp)
-                    elif c == empty:
-                        tmp.append(np.nan)
-                    else:
-                        tmp.append( float( d_temp[pn]['temp%d'%(c+18*pkgid)] ) )
-                A.append(tmp)
-
-        elif target in ( 'duteros', 'duteros-w' ) :
-            for i in range(0,5):
-                tmp = []
-                if i==0: 
-                    tmp.append(pkgtemp)
-                    tmp.append(np.nan)
+        for r in config["tempmap"]:
+            tmp = []
+            for c in r :
+                if c == -1:
+                    tmp.append(s_temp[pn]['pkg'])
                 else:
-                    tmp.append( float( d[pn]['temp%d'%( (i-1) + 0  + ncpu*pkgid)] ) ) # left
-                    tmp.append( float( d[pn]['temp%d'%( (i-1) + 4  + ncpu*pkgid)] ) ) # right
-                A.append(tmp)
-
+                    tmp.append(s_temp[pn]['%d' % c])
+            A.append(tmp)
 
         ax = plt.gca()
         cax = ax.imshow(A, cmap=cm.jet , vmin=config["mintemp"], vmax=config["maxtemp"] ,aspect=0.7, interpolation='none') # interpolation='nearest' 
