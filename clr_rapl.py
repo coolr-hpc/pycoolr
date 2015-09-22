@@ -60,6 +60,8 @@ class rapl_reader:
             self.max_energy_range_uj_d[k] = int(f.readline())
             f.close()
 
+        self.start_energy_counter()
+
     def initialized(self):
         return self.init
 
@@ -145,21 +147,135 @@ class rapl_reader:
             ret[k] /= (1000.0*1000.0) # conv. [uW] to [W]
         return ret
 
+    # this should be renamed to reset_...
+    def start_energy_counter(self):
+        if not self.initialized():
+            return
+
+        self.start_time_e = time.time()
+        self.totalenergy = {}
+        self.lastpower = {}
+
+        e = self.readenergy()
+        for k in sorted(e.keys()):
+            if k != 'time':
+                self.totalenergy[k] = 0.0
+                self.lastpower[k] = 0.0
+        self.prev_e = e
+
+    # XXX: fix the total energy tracking later
+    def read_energy_acc(self):
+        if not self.initialized():
+            return
+
+        e = self.readenergy()
+
+        de = self.diffenergy(self.prev_e, e)
+
+        for k in sorted(e.keys()):
+            if k != 'time':
+                self.totalenergy[k] += de[k]
+                self.lastpower[k] = de[k]/de['time']/1000.0/1000.0;
+        self.prev_e = e
+
+        return e
+
+    def stop_energy_counter(self):
+        if not self.initialized():
+            return
+
+        e = self.read_energy_acc()
+        self.stop_time = time.time()
+
+
+    def sample_and_json(self, label = "", accflag = False):
+        if not self.initialized():
+            return
+
+        e = self.readenergy()
+
+        de = self.diffenergy(self.prev_e, e)
+
+        for k in sorted(e.keys()):
+            if k != 'time':
+                if accflag:
+                    self.totalenergy[k] += de[k]
+                self.lastpower[k] = de[k]/de['time']/1000.0/1000.0;
+        self.prev_e = e
+
+        # constructing a json output
+        s  = '{"time":%.3f' % (e['time'])
+        if len(label) > 0:
+            s += ',"label":"%s"' % label
+        s += ',"energy":{'
+        firstitem = True
+        for k in sorted(e.keys()):
+            if k != 'time':
+                if firstitem:
+                    firstitem = False
+                else:
+                    s+=','
+                s += '"%s":%d' % (self.shortenkey(k), e[k])
+        s += '},'
+        s += '"power":{'
+
+        totalpower = 0.0
+        firstitem = True
+        for k in sorted(self.lastpower.keys()):
+            if k != 'time':
+                if firstitem:
+                    firstitem = False
+                else:
+                    s+=','
+                s += '"%s":%.1f' % (self.shortenkey(k), self.lastpower[k])
+                # this is a bit ad hoc way to calculate the total. needs to be fixed later
+                if k.find("core") == -1:
+                    totalpower += self.lastpower[k]
+        s += ',"total":%.1f' % (totalpower)
+        s += '},'
+
+        s += '"powercap":{'
+        rlimit = self.readpowerlimit()
+        firstitem = True
+        for k in sorted(rlimit.keys()):
+            if firstitem:
+                firstitem = False
+            else:
+                s+=','
+            s += '"%s":%.1f' % (self.shortenkey(k), rlimit[k])
+        s += '}'
+
+        s += '}'
+        return s
+
+    def total_energy_json(self):
+        if not self.initialized():
+            return ''
+
+        dt = self.stop_time - self.start_time_e
+        # constructing a json output
+        e = self.totalenergy
+        s  = '{"total":"energy","difftime":%f' % (dt)
+        for k in sorted(e.keys()):
+            if k != 'time':
+                s += ',"%s":%d' % (self.shortenkey(k), e[k])
+        s += '}'
+        return s
+
 
 if __name__ == '__main__':
 
     rr = rapl_reader()
 
     if rr.initialized():
+        rr.start_energy_counter()
         for i in range(0,3):
-            print '#%d reading rapl' % i
-            e1 = rr.readenergy()
             time.sleep(1)
-            e2 = rr.readenergy()
-            p = rr.calcpower(e1,e2)
-            for k in sorted(p):
-                print k, p[k]
-        print
+            s = rr.sample_and_json(accflag=True)
+            print s
+        rr.stop_energy_counter()
+        s = rr.total_energy_json()
+        print s
+
     else:
         print 'Error: No intel rapl sysfs found'
-

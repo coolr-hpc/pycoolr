@@ -59,6 +59,7 @@ class coolrmon_tracer:
     def sample_temp(self,label):
         temp = self.ctr.readtempall()
         # constructing a json output
+        # this should go to clr_hwmon
         s  = '{"sample":"temp", "time":%.3f' % (time.time())
         s += ',"label":"%s"' % label
         for p in sorted(temp.keys()):
@@ -80,74 +81,22 @@ class coolrmon_tracer:
 
         return temp
 
-    def start_energy_counter(self):
-        if not self.rapl.initialized():
-            return
-
-        e = self.rapl.readenergy()
-        self.start_time_e = time.time()
-
-        self.totalenergy = {}
-        self.lastpower = {}
-
-        for k in sorted(e.keys()):
-            if k != 'time':
-                self.totalenergy[k] = 0.0
-                self.lastpower[k] = 0.0
-        self.prev_e = e
-
-    def read_energy_acc(self):
-        if not self.rapl.initialized():
-            return
-
-        e = self.rapl.readenergy()
-
-        de = self.rapl.diffenergy(self.prev_e, e)
-
-        for k in sorted(e.keys()):
-            if k != 'time':
-                self.totalenergy[k] += de[k]
-                self.lastpower[k] = de[k]/de['time']/1000.0/1000.0;
-
-        self.prev_e = e
-
-        return e
-
-    def stop_energy_counter(self):
-        if not self.rapl.initialized():
-            return
-
-        e = self.read_energy_acc()
-        self.stop_time = time.time()
-
 
     def sample_energy(self, label):
-        if not self.rapl.initialized():
-            return
 
+        accflag = False
         if label == 'run' :
-            e = self.read_energy_acc()
-        else:
-            e = self.rapl.readenergy()
-
-        # constructing a simple output
-        s  = '{"sample":"energy","time":%.3f' % (e['time'])
-        s += ',"label":"%s"' % label
-        for k in sorted(e.keys()):
-            if k != 'time':
-                s += ',"%s":%d' % ( self.rapl.shortenkey(k), e[k])
-        s += '}'
+            accflag = True
+        s = self.rapl.sample_and_json(label, accflag)
         self.logger(s)
-
-        return e
 
     def cooldown(self,label):
         if self.cooldowntemp < 0:
             return
 
         while True: 
+            self.sample_energy(label)
             temp = self.sample_temp(label)
-            e = self.sample_energy(label)
 
             # currently use only maxcoretemp
             maxcoretemp = self.ctr.getmaxcoretemp(temp)
@@ -217,19 +166,6 @@ class coolrmon_tracer:
                 break
             print 'stdout:', l,
 
-    def report_total_energy(self):
-        if not self.rapl.initialized():
-            return
-
-        dt = self.stop_time - self.start_time_e
-        # constructing a json output
-        e = self.totalenergy
-        s  = '{"total":"energy","difftime":%f' % (dt)
-        for k in sorted(e.keys()):
-            if k != 'time':
-                s += ',"%s":%d' % (self.rapl.shortenkey(k), e[k])
-        s += '}'
-        self.logger(s)
 
     def sigh(signal, frame):
         self.kp.disable()
@@ -248,32 +184,19 @@ class coolrmon_tracer:
 
             self.kp = keypress.keypress()
             self.kp.enable()
-            self.start_energy_counter()
+            self.rapl.start_energy_counter()
             while True:
                 self.sample_temp('run')
                 self.sample_energy('run')
-
-                # constructing a json output
-                if self.rapl.initialized():
-                    totalpower = 0.0
-                    s  = '{"sample":"power","time":%.3f' % (self.prev_e['time'])
-                    for k in sorted(self.lastpower.keys()):
-                        if k != 'time':
-                            s += ',"%s":%.1f' % (self.rapl.shortenkey(k), self.lastpower[k])
-                        # this is a bit ad hoc way to calculate the total. needs to be fixed later
-                        if k.find("core") == -1:
-                            totalpower += self.lastpower[k]
-                    s += ',"total":%.1f' % (totalpower)
-                    s += '}'
-                    self.logger(s)
 
                 time.sleep(self.intervalsec)
                 if self.kp.available():
                     if self.kp.readkey() == 'q':
                         break
-            self.stop_energy_counter()
+            self.rapl.stop_energy_counter()
+            s = self.rapl.total_energy_json()
+            self.logger(s)
             self.kp.disable()
-            self.report_total_energy()
             return
 
         self.cooldown('cooldown')
@@ -346,7 +269,6 @@ if __name__ == '__main__':
             tr.sample_energy('sample')
             tr.sample_freq('sample')
             tr.sample_acpi('sample')
-
             sys.exit(0)
         elif o in ("--info"):
             tr.showconfig()
