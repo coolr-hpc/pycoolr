@@ -27,6 +27,7 @@ import keypress
 import clr_rapl
 import clr_hwmon
 import clr_nodeinfo
+import clr_amperf
 
 from clr_misc import *
 
@@ -46,6 +47,10 @@ def usage():
     print ''
 
 class coolrmon_tracer:
+    def sample_freq(self,label):
+        s = tr.amp.sample_and_json()
+        self.logger(s)
+
     def sample_temp(self,label):
         temp = self.ctr.readtempall()
         # constructing a json output
@@ -159,7 +164,7 @@ class coolrmon_tracer:
 
     def __init__ (self):
         # default values
-        self.cooldowntemp = 40  # depend on arch
+        self.cooldowntemp = 45  # depend on arch
         #self.output = sys.stdout
         self.intervalsec = 1
         self.logger = self.defaultlogger
@@ -168,6 +173,7 @@ class coolrmon_tracer:
         self.rapl = clr_rapl.rapl_reader()
         self.oc = clr_nodeinfo.osconfig()
         self.ct = clr_nodeinfo.cputopology()
+        self.amp = clr_amperf.amperf_reader()
 
     def showconfig(self):
         s  = '{"kernelversion":"%s"' % self.oc.version
@@ -332,6 +338,8 @@ if __name__ == '__main__':
         elif o in ("--sample"):
             tr.sample_temp('sample')
             tr.sample_energy('sample')
+            tr.sample_freq('sample')
+
             sys.exit(0)
         elif o in ("--info"):
             tr.showconfig()
