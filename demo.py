@@ -161,6 +161,8 @@ while True:
     s_temp = sample[0]
     s_energy = sample[1]
     s_freq = sample[2]
+    if len(sample) == 4:
+        s_acpi = sample[3]
 
     #
     #
@@ -225,7 +227,7 @@ while True:
 
     if config["drawacpipwr"] == "yes" :
         acpwrq.popleft()
-        acpwrq.append( d['acpipwr'] )
+        acpwrq.append(s_acpi['power'])
 
     print 'totalpower=%lf' % totalpower
     totalpowerqs.popleft()
