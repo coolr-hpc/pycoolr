@@ -229,7 +229,7 @@ while True:
         acpwrq.popleft()
         acpwrq.append(s_acpi['power'])
 
-    print 'totalpower=%lf' % totalpower
+    # print 'totalpower=%lf' % totalpower
     totalpowerqs.popleft()
     totalpowerqs.append( totalpower )
 
@@ -317,6 +317,25 @@ while True:
     plt.xlabel('Uptime [S]')
     plt.ylabel('CPU Frequency [GHz]')
 
+    #
+    # freq bar graph
+    # XXX: quick dirty for now
+    plt.subplot(2,4,subplotidx)
+    subplotidx = subplotidx + 1
+    nbars = config["ncpu"]*4
+    plt.axis([0, nbars , config["freqmin"], config["freqmax"]])
+
+    offset = 0
+    for pkgid in range(0, npkgs):
+        ind = np.arange(nbars/2) + offset
+        tmpy = []
+        p = 'p%d' % pkgid
+        for kc in sorted(s_freq[p].keys()):
+            if kc[0] == 'c':
+                tmpy.append(s_freq[p][kc])
+                offset += 1
+        plt.bar( ind, tmpy, width = .5, color=cnames[pkgid] )
+                
     #
     # app
 
