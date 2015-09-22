@@ -103,7 +103,7 @@ nans = [ np.nan for i in range(0,maxpoints) ]
 uptimeq = deque(nans)
 
 #
-acpipwrq = deque(nans)
+acpwrq = deque(nans)
 
 # 
 meanqs  = [ deque(nans) for i in range(0,npkgs) ]
@@ -151,12 +151,20 @@ for i in range(0, npkgs):
 
 cnames= [ 'blue', 'green' ]
 
+
 while True:
+    #
+    # querying
+    #
+    
     sample = querydataj("--sample")
     s_temp = sample[0]
     s_energy = sample[1]
     s_freq = sample[2]
 
+    #
+    #
+    
     cur_t = s_temp['time']
     rel_t =  cur_t - start_t 
     uptimeq.popleft()
@@ -176,7 +184,7 @@ while True:
         stdqs[i].append(vs)
 
         fm = s_freq[p]['mean']
-        print 'freq', fm
+
         freq_meanqs[i].popleft()
         freq_meanqs[i].append(fm) 
 
@@ -185,13 +193,13 @@ while True:
         if edelta < 0 :
             edelta += maxenergyuj[i]
         tdelta = cur_t - prev_t
-        print cur_t, prev_t
+        #print cur_t, prev_t
         powerwatt = edelta / (1000*1000.0) / tdelta
         totalpower=totalpower+powerwatt
         powerqs[i].popleft()
         powerqs[i].append(powerwatt)
         prev_e[i] = cur_pkg_e
-        print 'pkgpower%d=%lf' % (i, powerwatt), 
+        #print 'pkgpower%d=%lf' % (i, powerwatt), 
 
         if config["dramrapl"]:
             cur_dram_e = s_energy[p + '/dram']
@@ -203,16 +211,21 @@ while True:
             drampowerqs[i].popleft()
             drampowerqs[i].append(powerwatt)
             prev_dram_e[i] = cur_dram_e
-            print 'drampower%d=%lf' % (i, powerwatt), 
+            #print 'drampower%d=%lf' % (i, powerwatt), 
 
         plimqs[i].popleft()
         # XXX
         # plimqs[i].append(d[p]['powerlimit'])
 
 
+    if config["drawexternal"] == "yes":
+        s_ac = queryexternalj("--sample")[0]
+        acpwrq.popleft()
+        acpwrq.append(float(s_ac["power"]))
+
     if config["drawacpipwr"] == "yes" :
-        acpipwrq.popleft()
-        acpipwrq.append( d['acpipwr'] )
+        acpwrq.popleft()
+        acpwrq.append( d['acpipwr'] )
 
     print 'totalpower=%lf' % totalpower
     totalpowerqs.popleft()
@@ -246,22 +259,22 @@ while True:
     plt.ylabel('Core temperature [C]')
 
     #
-    #
-    if config["drawacpipwr"] == "yes": 
+    # assume drawacpipwr and drawexternal is exclusive
+    if config["drawacpipwr"] == "yes" or config["drawexternal"]: 
         plt.subplot(2,4,subplotidx)
         subplotidx = subplotidx + 1
         plt.axis([rel_t - maxpoints*interval, rel_t, 20, 600]) # [xmin,xmax,ymin,ymax]
 
         l_uptime=list(uptimeq)
 
-        l_acpipwrqs=list(acpipwrq)
-        plt.plot(l_uptime, l_acpipwrqs, 'k', scaley=False)
+        l_acpwrqs=list(acpwrq)
+        plt.plot(l_uptime, l_acpwrqs, 'k', scaley=False)
 
         l_totalpowerqs=list(totalpowerqs)
         plt.plot(l_uptime, l_totalpowerqs, 'k--', scaley=False )
 
         plt.xlabel('Uptime [S]')
-        plt.ylabel('Power [W] - ACPI and RAPL total')
+        plt.ylabel('Power [W] - AC Power and RAPL total')
 
     #
     #
