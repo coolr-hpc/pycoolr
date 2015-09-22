@@ -27,8 +27,7 @@ with open(configfile) as f:
 
 print 'Config :', configfile
     
-drawacpipwr = False
-dramrapl = False
+
 plotapp = False
 maxpoints = 360
 interval = 1
@@ -75,6 +74,22 @@ def querydataj(cmd=''):
     f.close()
 
     return ret
+
+
+def queryexternalj(cmd=''):
+    f = os.popen("%s %s" % (config["external"],cmd), "r")
+    ret = [] # return an array of dict objects
+
+    while True:
+        l = f.readline()
+        if not l:
+            break
+        ret.append(json.loads(l))
+        logf.write(l)
+    f.close()
+
+    return ret
+
 #
 #
 
@@ -130,9 +145,9 @@ prev_t = start_t
 for i in range(0, npkgs):
     k = 'p%d' % i
     prev_e[i] = s_energy[k]
-    if dramrapl:
+    if config["dramrapl"] == "yes":
         k = 'p%d/dram' % i
-        prev_dram_e[i] = d[k]
+        prev_dram_e[i] = s_energy[k]
 
 cnames= [ 'blue', 'green' ]
 
@@ -178,7 +193,7 @@ while True:
         prev_e[i] = cur_pkg_e
         print 'pkgpower%d=%lf' % (i, powerwatt), 
 
-        if dramrapl:
+        if config["dramrapl"]:
             cur_dram_e = s_energy[p + '/dram']
             edelta = cur_dram_e - prev_dram_e[i]
             if edelta < 0 :
@@ -195,7 +210,7 @@ while True:
         # plimqs[i].append(d[p]['powerlimit'])
 
 
-    if drawacpipwr : 
+    if config["drawacpipwr"] == "yes" :
         acpipwrq.popleft()
         acpipwrq.append( d['acpipwr'] )
 
@@ -232,7 +247,7 @@ while True:
 
     #
     #
-    if drawacpipwr: 
+    if config["drawacpipwr"] == "yes": 
         plt.subplot(2,4,subplotidx)
         subplotidx = subplotidx + 1
         plt.axis([rel_t - maxpoints*interval, rel_t, 20, 600]) # [xmin,xmax,ymin,ymax]
@@ -265,7 +280,7 @@ while True:
         l_powerqs=list(powerqs[pkgid])
         plt.plot(l_uptime, l_powerqs, scaley=False, label='PKG%d'%pkgid, color=cnames[pkgid] )
 
-        if dramrapl: 
+        if config["dramrapl"] == "yes": 
             l_drampowerqs=list(drampowerqs[pkgid])
             plt.plot(l_uptime, l_drampowerqs, scaley=False, label='DRAM%d'%pkgid, color=cnames[pkgid], ls='-' )
 
