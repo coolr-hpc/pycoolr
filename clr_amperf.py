@@ -135,9 +135,9 @@ class amperf_reader :
                 buf += ','
             cnt += 1
             buf += '"%s":{' % kp
-            buf += '"mean":%.2lf,"std":%.2lf' % (s[kp][0], s[kp][1])
+            buf += '"mean":%.3lf,"std":%.3lf' % (s[kp][0], s[kp][1])
             for kc in f[kp].keys():
-                buf += ',"%s":%.2lf' % (kc,f[kp][kc])
+                buf += ',"%s":%.3lf' % (kc,f[kp][kc])
             buf += '}'
         buf += '}'
         return buf

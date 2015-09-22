@@ -47,6 +47,11 @@ def usage():
     print ''
 
 class coolrmon_tracer:
+    def sample_acpi(self, label):
+        if tr.acpi.initialized():
+            s = tr.acpi.sample_and_json()
+            self.logger(s)
+
     def sample_freq(self,label):
         s = tr.amp.sample_and_json()
         self.logger(s)
@@ -174,6 +179,7 @@ class coolrmon_tracer:
         self.oc = clr_nodeinfo.osconfig()
         self.ct = clr_nodeinfo.cputopology()
         self.amp = clr_amperf.amperf_reader()
+        self.acpi = clr_hwmon.acpi_power_meter_reader()
 
     def showconfig(self):
         s  = '{"kernelversion":"%s"' % self.oc.version
@@ -339,6 +345,7 @@ if __name__ == '__main__':
             tr.sample_temp('sample')
             tr.sample_energy('sample')
             tr.sample_freq('sample')
+            tr.sample_acpi('sample')
 
             sys.exit(0)
         elif o in ("--info"):
