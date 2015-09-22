@@ -330,7 +330,7 @@ while True:
             if kc[0] == 'c':
                 tmpy.append(s_freq[p][kc])
                 offset += 1
-        plt.bar( ind, tmpy, width = .5, color=cnames[pkgid] )
+        plt.bar( ind, tmpy, width = .6, color=cnames[pkgid], edgecolor='none' )
                 
     #
     # app
@@ -380,8 +380,6 @@ while True:
         plt.xlabel('Time [S]')
         plt.ylabel('[Gflop/s]')
     
-    
-
 
     #
     # cmap
