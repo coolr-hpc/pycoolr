@@ -121,6 +121,7 @@ for i in range(0, npkgs):
 sample = querydataj("--sample")
 s_temp = sample[0]
 s_energy = sample[1]
+s_freq = sample[2]
 
 # to calculate the average power we need the previous value
 
@@ -139,6 +140,7 @@ while True:
     sample = querydataj("--sample")
     s_temp = sample[0]
     s_energy = sample[1]
+    s_freq = sample[2]
 
     cur_t = s_temp['time']
     rel_t =  cur_t - start_t 
@@ -158,10 +160,10 @@ while True:
         stdqs[i].popleft()
         stdqs[i].append(vs)
 
-        # FREQ later
-#        fm = d[p]['freqmean']
-#        freq_meanqs[i].popleft()
-#        freq_meanqs[i].append(fm) 
+        fm = s_freq[p]['mean']
+        print 'freq', fm
+        freq_meanqs[i].popleft()
+        freq_meanqs[i].append(fm) 
 
         cur_pkg_e = s_energy[p]
         edelta = cur_pkg_e - prev_e[i]
