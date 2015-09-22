@@ -129,7 +129,7 @@ class amperf_reader :
         s = self.getpkgstats(f)
 
         cnt = 0
-        buf = '{'
+        buf = '{"sample":"freq",'
         for kp in f.keys():
             if cnt > 0:
                 buf += ','
