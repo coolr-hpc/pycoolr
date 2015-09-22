@@ -128,8 +128,12 @@ class amperf_reader :
         f = self.getavgGHz(d)
         s = self.getpkgstats(f)
 
+        cnt = 0
         buf = '{'
         for kp in f.keys():
+            if cnt > 0:
+                buf += ','
+            cnt += 1
             buf += '"%s":{' % kp
             buf += '"mean":%.2lf,"std":%.2lf' % (s[kp][0], s[kp][1])
             for kc in f[kp].keys():
