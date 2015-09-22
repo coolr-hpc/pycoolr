@@ -26,7 +26,6 @@ with open(configfile) as f:
     config = json.load(f)
 
 print 'Config :', configfile
-print config
     
 drawacpipwr = False
 dramrapl = False
@@ -118,14 +117,14 @@ maxenergyuj = [ 0 for i in range(0,npkgs) ]
 for i in range(0, npkgs):
     k = 'p%d' % i
     maxenergyuj[i] = info['max_energy_uj'][k]
-    print maxenergyuj[i]
 
 sample = querydataj("--sample")
 s_temp = sample[0]
 s_energy = sample[1]
 
 # to calculate the average power we need the previous value
-start_t = d['uptime']
+
+start_t = s_temp['time']
 prev_t = start_t
 for i in range(0, npkgs):
     k = 'p%d' % i
@@ -137,9 +136,11 @@ for i in range(0, npkgs):
 cnames= [ 'blue', 'green' ]
 
 while True:
-    d = querydataj()
+    sample = querydataj("--sample")
+    s_temp = sample[0]
+    s_energy = sample[1]
 
-    cur_t = d['uptime']
+    cur_t = s_temp['time']
     rel_t =  cur_t - start_t 
     uptimeq.popleft()
     uptimeq.append( rel_t )
@@ -149,8 +150,8 @@ while True:
 
     for i in range(0,npkgs): 
         p = 'p%d' % i
-        vm = d_temp[p]['mean']
-        vs = d_temp[p]['std']
+        vm = s_temp[p]['mean']
+        vs = s_temp[p]['std']
 
         meanqs[i].popleft()
         meanqs[i].append(vm) 
@@ -167,6 +168,7 @@ while True:
         if edelta < 0 :
             edelta += maxenergyuj[i]
         tdelta = cur_t - prev_t
+        print cur_t, prev_t
         powerwatt = edelta / (1000*1000.0) / tdelta
         totalpower=totalpower+powerwatt
         powerqs[i].popleft()
@@ -187,7 +189,8 @@ while True:
             print 'drampower%d=%lf' % (i, powerwatt), 
 
         plimqs[i].popleft()
-        plimqs[i].append(d[p]['powerlimit'])
+        # XXX
+        # plimqs[i].append(d[p]['powerlimit'])
 
 
     if drawacpipwr : 
@@ -214,7 +217,7 @@ while True:
     #
     plt.subplot(2,4,subplotidx)
     subplotidx = subplotidx +1
-    plt.axis([rel_t - maxpoints*interval, rel_t, mintemp, maxtemp]) # [xmin,xmax,ymin,ymax]
+    plt.axis([rel_t - maxpoints*interval, rel_t, config["mintemp"], config["maxtemp"]]) # [xmin,xmax,ymin,ymax]
 #    plt.axhspan( 70, maxtemp, facecolor='#eeeeee', alpha=0.5)
 
     for pkgid in range(0, npkgs):
@@ -247,13 +250,14 @@ while True:
     #
     plt.subplot(2,4,subplotidx)
     subplotidx = subplotidx + 1
-    plt.axis([rel_t - maxpoints*interval, rel_t, pwrmin, pwrmax]) # [xmin,xmax,ymin,ymax]
+    plt.axis([rel_t - maxpoints*interval, rel_t, config["pwrmin"], config["pwrmax"]]) # [xmin,xmax,ymin,ymax]
 #    plt.axhspan( 115, 120, facecolor='#eeeeee', alpha=0.5)
 
     l_uptime=list(uptimeq)
     for pkgid in range(0, npkgs):
 
-        plt.plot(l_uptime, list(plimqs[pkgid]), scaley=False, color='red' )
+        #XXX
+#        plt.plot(l_uptime, list(plimqs[pkgid]), scaley=False, color='red' )
 
 
         l_powerqs=list(powerqs[pkgid])
@@ -270,8 +274,8 @@ while True:
     #
     plt.subplot(2,4,subplotidx)
     subplotidx = subplotidx + 1
-    plt.axis([rel_t - maxpoints*interval, rel_t, freqmin, freqmax]) # [xmin,xmax,ymin,ymax]
-    plt.axhspan( freqnorm, freqmax, facecolor='#eeeeee', alpha=0.5)
+    plt.axis([rel_t - maxpoints*interval, rel_t, config["freqmin"], config["freqmax"]]) # [xmin,xmax,ymin,ymax]
+    plt.axhspan( config["freqnorm"], config["freqmax"], facecolor='#eeeeee', alpha=0.5)
 
     for pkgid in range(0, npkgs):
         l_uptime=list(uptimeq)
@@ -335,11 +339,12 @@ while True:
     #
     # cmap
     #
-    for pkgid in range(0, 2): # this only works with dual sockets
+#    for pkgid in range(0, 2): # this only works with dual sockets
+    if False: # skip now
         plt.subplot(2,4,subplotidx+pkgid)
 
-        pn = 'pkg%d' % pkgid
-        pkgtemp = float( d[pn]['pkgtemp'] )
+        pn = 'p%d' % pkgid
+        pkgtemp = float( s_temp[pn]['pkg'] )
         A = []
         if target in ( 'tritos', 'tritos-w' ) :
 #            # three column version
@@ -374,7 +379,7 @@ while True:
                     elif c == empty:
                         tmp.append(np.nan)
                     else:
-                        tmp.append( float( d[pn]['temp%d'%(c+18*pkgid)] ) )
+                        tmp.append( float( d_temp[pn]['temp%d'%(c+18*pkgid)] ) )
                 A.append(tmp)
 
         elif target in ( 'duteros', 'duteros-w' ) :
@@ -390,7 +395,7 @@ while True:
 
 
         ax = plt.gca()
-        cax = ax.imshow(A, cmap=cm.jet , vmin=mintemp, vmax=maxtemp ,aspect=0.7, interpolation='none') # interpolation='nearest' 
+        cax = ax.imshow(A, cmap=cm.jet , vmin=config["mintemp"], vmax=config["maxtemp"] ,aspect=0.7, interpolation='none') # interpolation='nearest' 
         cbar = fig.colorbar( cax )
         plt.xticks( [] )
         plt.yticks( [] )
@@ -418,30 +423,32 @@ while True:
     plt.text( 0.3, ypos(3), 'powerlimit' )
 
     l=5
-    plt.text( 0.1, ypos(l), 'Linux kernel : %s' % info['version'] )
+    plt.text( 0.1, ypos(l), 'Linux kernel : %s' % info['kernelversion'] )
     l += 1
-    plt.text( 0.1, ypos(l), 'Freq driver : %s' % info['cpufreq_driver'] )
+    plt.text( 0.1, ypos(l), 'Freq driver : %s' % info['freqdriver'] )
     l += 1
-    plt.text( 0.1, ypos(l), 'Freq governor : %s' % info['cpufreq_governor'] )
+# XXX
+#    plt.text( 0.1, ypos(l), 'Freq governor : %s' % info['cpufreq_governor'] )
+#    l += 1
+#    if info['cpufreq_cur_freq'] == turbofreq:
+#        plt.text( 0.1, ypos(l), 'Turboboost %.1f - %.1f GHz' % (freqnorm, freqmax) )
+#    else:
+#        plt.text( 0.1, ypos(l), 'Current freq. : %s Hz' % info['cpufreq_cur_freq'] )
+
     l += 1
-    if info['cpufreq_cur_freq'] == turbofreq:
-        plt.text( 0.1, ypos(l), 'Turboboost %.1f - %.1f GHz' % (freqnorm, freqmax) )
-    else:
-        plt.text( 0.1, ypos(l), 'Current freq. : %s Hz' % info['cpufreq_cur_freq'] )
+# XXX
+#    l += 1
+#    plt.text( 0.1, ypos(l), 'Power limit pkg0 : %d Watt' % d['pkg0']['powerlimit'] )
+#    l += 1
+#    plt.text( 0.1, ypos(l), 'Power limit pkg1 : %d Watt' % d['pkg1']['powerlimit'] )
 
     l += 1
     l += 1
-    plt.text( 0.1, ypos(l), 'Power limit pkg0 : %d Watt' % d['pkg0']['powerlimit'] )
+    plt.text( 0.1, ypos(l), config["mdesc1"] )
     l += 1
-    plt.text( 0.1, ypos(l), 'Power limit pkg1 : %d Watt' % d['pkg1']['powerlimit'] )
-
+    plt.text( 0.1, ypos(l), config["mdesc2"] )
     l += 1
-    l += 1
-    plt.text( 0.1, ypos(l), mdesc1 )
-    l += 1
-    plt.text( 0.1, ypos(l), mdesc2 )
-    l += 1
-    plt.text( 0.1, ypos(l), mdesc3 )
+    plt.text( 0.1, ypos(l), config["mdesc3"] )
     l += 1
 
     #
