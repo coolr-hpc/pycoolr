@@ -265,7 +265,7 @@ while True:
     if config["drawacpipwr"] == "yes" or config["drawexternal"]: 
         plt.subplot(2,4,subplotidx)
         subplotidx = subplotidx + 1
-        plt.axis([rel_t - maxpoints*interval, rel_t, 20, 600]) # [xmin,xmax,ymin,ymax]
+        plt.axis([rel_t - maxpoints*interval, rel_t, 20, config["acpwrmax"]]) # [xmin,xmax,ymin,ymax]
 
         l_uptime=list(uptimeq)
 
