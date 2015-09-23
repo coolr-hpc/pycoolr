@@ -29,7 +29,8 @@ print 'Config :', configfile
     
 
 plotapp = False
-maxpoints = 360
+#maxpoints = 360
+maxpoints = 120
 interval = 1
 
 #
