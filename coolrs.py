@@ -205,7 +205,7 @@ class coolrmon_tracer:
         t = threading.Thread(target=self.tee, args=[argv])
         t.start()
 
-        self.start_energy_counter()
+        self.rapl.start_energy_counter()
 
         while True:
             if not t.isAlive():
@@ -216,8 +216,10 @@ class coolrmon_tracer:
 
             time.sleep(self.intervalsec)
 
-        self.stop_energy_counter()
-        self.report_total_energy()
+        self.rapl.stop_energy_counter()
+        s = self.rapl.total_energy_json()
+        self.logger(s)
+
         self.cooldown('cooldown')
 
 class log2file:
@@ -229,7 +231,8 @@ class log2file:
             self.f = sys.stdout
 
     def logger(self,str):
-        self.f.write(str)
+        self.f.write(str + '\n')
+
 
 if __name__ == '__main__':
 
