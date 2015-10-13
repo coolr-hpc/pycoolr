@@ -213,6 +213,8 @@ class coolrmon_tracer:
 
             self.sample_temp('run')
             self.sample_energy('run')
+            tr.sample_freq('sample')
+            tr.sample_acpi('sample')
 
             time.sleep(self.intervalsec)
 

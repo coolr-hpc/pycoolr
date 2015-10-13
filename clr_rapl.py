@@ -204,7 +204,7 @@ class rapl_reader:
         self.prev_e = e
 
         # constructing a json output
-        s  = '{"time":%.3f' % (e['time'])
+        s  = '{"sample":"energy","time":%.3f' % (e['time'])
         if len(label) > 0:
             s += ',"label":"%s"' % label
         s += ',"energy":{'
