@@ -70,7 +70,11 @@ def querydataj(cmd=''):
         l = f.readline()
         if not l:
             break
-        ret.append(json.loads(l))
+        try:
+            j = json.loads(l)
+        except ValueError, e:
+            break
+        ret.append(j)
         logf.write(l)
     f.close()
 
