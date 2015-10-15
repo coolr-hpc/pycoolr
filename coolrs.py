@@ -140,16 +140,31 @@ class coolrmon_tracer:
 
         npkgs = len(self.ct.pkgcpus.keys())
         s += ',"npkgs":%d' % npkgs
-        s += ',"nproc":%d' % len(self.ct.onlinecpus)
 
-#        for p in sorted(self.ct.pkgcpus.keys()):
-#            s += ',"pkg%dnproc":%d' % (p, len(self.ct.pkgcpus[p]))
+        for p in sorted(self.ct.pkgcpus.keys()):
+            s += ',"pkg%d":[' % p
+            s += ','.join(map(str,self.ct.pkgcpus[p]))
+            s += ']'
+
+        for p in sorted(self.ct.pkgcpus.keys()):
+            s += ',"pkg%dphyid":[' % p
+            phyid = []
+            for cpuid in self.ct.pkgcpus[p]:
+                phyid.append(self.ct.cpu2coreid[cpuid][1])
+            s += ','.join(map(str,phyid))
+            s += ']'
+
+        s += ',"nnodes":%d' % len(self.ct.nodecpus.keys())
+        for n in sorted(self.ct.nodecpus.keys()):
+            s += ',"node%d":[' % p
+            s += ','.join(map(str,self.ct.nodecpus[n]))
+            s += ']'
 
         if self.rapl.initialized():
             s += ',"max_energy_uj":{'
             firstitem = True
             for p in sorted(self.ct.pkgcpus.keys()):
-                k = 'package-%d' % p  # does 'topology' and rapldriver follow the same numbering scheme?
+                k = 'package-%d' % p  # XXX: double check both 'topology' and rapldriver use the same numbering scheme.
                 if firstitem :
                     firstitem = False
                 else:

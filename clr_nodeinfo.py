@@ -159,7 +159,7 @@ def testcputopology():
         print 'pkg%d:' % p, len(ct.pkgcpus[p]), ct.pkgcpus[p]
         print '   cpuid:', 
         for cpuid in ct.pkgcpus[p]:
-            print ct.cpu2coreid[cpuid],
+            print ct.cpu2coreid[cpuid],ct.cpu2coreid[cpuid][1],
         print
     print
     for n in sorted(ct.nodecpus.keys()):
