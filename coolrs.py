@@ -48,12 +48,12 @@ def usage():
 
 class coolrmon_tracer:
     def sample_acpi(self, label):
-        if tr.acpi.initialized():
-            s = tr.acpi.sample_and_json()
+        if self.acpi.initialized():
+            s = self.acpi.sample_and_json()
             self.logger(s)
 
     def sample_freq(self,label):
-        s = tr.amp.sample_and_json()
+        s = self.amp.sample_and_json()
         self.logger(s)
 
     def sample_temp(self,label):
@@ -192,6 +192,8 @@ class coolrmon_tracer:
             while True:
                 self.sample_temp('run')
                 self.sample_energy('run')
+                self.sample_freq('run')
+                self.sample_acpi('run')
 
                 time.sleep(self.intervalsec)
                 if self.kp.available():
@@ -217,8 +219,8 @@ class coolrmon_tracer:
 
             self.sample_temp('run')
             self.sample_energy('run')
-            tr.sample_freq('sample')
-            tr.sample_acpi('sample')
+            self.sample_freq('run')
+            self.sample_acpi('run')
 
             time.sleep(self.intervalsec)
 
