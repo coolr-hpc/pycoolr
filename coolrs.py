@@ -140,6 +140,10 @@ class coolrmon_tracer:
 
         npkgs = len(self.ct.pkgcpus.keys())
         s += ',"npkgs":%d' % npkgs
+        s += ',"nproc":%d' % len(self.ct.onlinecpus)
+
+#        for p in sorted(self.ct.pkgcpus.keys()):
+#            s += ',"pkg%dnproc":%d' % (p, len(self.ct.pkgcpus[p]))
 
         if self.rapl.initialized():
             s += ',"max_energy_uj":{'
