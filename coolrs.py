@@ -141,6 +141,8 @@ class coolrmon_tracer:
         #s += ',"cpufreq_governor":"%s"' % self.oc.governor
         #s += ',"cpufreq_cur_freq":%s' % self.oc.cur_freq
 
+        ncpus = len(self.ct.onlinecpus)
+        s += ',"ncpus":%d' % ncpus
         npkgs = len(self.ct.pkgcpus.keys())
         s += ',"npkgs":%d' % npkgs
 

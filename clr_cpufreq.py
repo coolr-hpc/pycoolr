@@ -14,6 +14,7 @@ import os, sys, time
 import struct
 import copy
 import clr_nodeinfo
+import numpy as np
 
 #an example the content of cpustat
 #id                    0
@@ -182,13 +183,14 @@ class cpufreq_reader:
 
         buf = '{"sample":"freq"'
         for p in sorted(self.ct.pkgcpus.keys()):
+            tmp = [f[i] for i in self.ct.pkgcpus[p]]
+            freqmean = np.mean(tmp)
+            freqstd = np.std(tmp)
+
             buf += ',"p%s":{' % p
-            cnt = 0
+            buf += '"mean":%.3lf,"std":%.3lf' % (freqmean,freqstd)
             for c in self.ct.pkgcpus[p]:
-                if cnt > 0:
-                    buf += ','
-                cnt += 1
-                buf += '"c%d":%.3lf' % (c, f[c])
+                buf += ',"c%d":%.3lf' % (c, f[c])
             buf += '}'
         buf += '}'
         return buf
