@@ -74,6 +74,7 @@ class cpustatvals:
 
         return freq
 
+
     def calc_aperf(self,prev): # prev is an object of cpustatvals
         if not (prev.d.has_key('tsc') and self.d.has_key('tsc')):
                     return 0.0
@@ -90,10 +91,9 @@ class cpufreq_reader:
     def __init__(self):
         # I don't know how to create an object in a singleton manner in python
         # so simply instantiating an object of cputopology again here.
-        topo = clr_nodeinfo.cputopology()
-        topo.detect()
+        self.ct = clr_nodeinfo.cputopology()
 
-        self.cpus = topo.onlinecpus
+        self.cpus = self.ct.onlinecpus # just for convenience
 
         self.init = False
 
@@ -118,6 +118,7 @@ class cpufreq_reader:
         for cpuid in self.cpus:
             self.samples[idx][cpuid].parse()
         self.cnt = self.cnt + 1
+
 
     def pstate(self):
         ret = [0.0 for i in self.cpus]
@@ -172,6 +173,27 @@ class cpufreq_reader:
 
         return ret
 
+    def sample_and_json(self):
+        if not self.init:
+            return ''
+
+        self.sample()
+        f = self.aperf()
+
+        buf = '{"sample":"freq"'
+        for p in sorted(self.ct.pkgcpus.keys()):
+            buf += ',"p%s":{' % p
+            cnt = 0
+            for c in self.ct.pkgcpus[p]:
+                if cnt > 0:
+                    buf += ','
+                cnt += 1
+                buf += '"c%d":%.3lf' % (c, f[c])
+            buf += '}'
+        buf += '}'
+        return buf
+
+
 
 if __name__ == '__main__':
 
@@ -188,15 +210,19 @@ if __name__ == '__main__':
             print p,
         print
 
+        print '[aperf]',
+        for f in freq.aperf():
+            print '%.2lf ' % f,
+        print
+
         print '[freq]',
         for f in freq.cpufreq():
             print '%.2lf ' % f,
         print
 
-        print '[aperf]',
-        for f in freq.aperf():
-            print '%.2lf ' % f,
-        print
+        j = freq.sample_and_json()
+        print '[freq json]'
+        print j
 
         print
         time.sleep(1)

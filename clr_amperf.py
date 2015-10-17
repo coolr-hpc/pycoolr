@@ -100,6 +100,7 @@ class amperf_reader :
             if kp != 'time':
                 tmp = {}
                 for kc in d[kp].keys():
+                    # calc avgMHz delta_aperf / delta_t
                     tmp[kc] = d[kp][kc][0] / dt * 1e-9
                 ret[kp] = tmp
 
