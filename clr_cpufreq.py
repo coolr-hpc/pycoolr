@@ -111,6 +111,8 @@ class cpufreq_reader:
             [cpustatvals(i) for i in self.cpus],
             [cpustatvals(i) for i in self.cpus] ]
 
+        self.sample()
+
     def sample(self):
         if not self.init:
             return
@@ -203,6 +205,14 @@ if __name__ == '__main__':
     if not freq.init:
         print 'Please check the cpustat module is installed'
         sys.exit(1)
+
+    for i in range(0, 20):
+        j = freq.sample_and_json()
+        print '[freq json]'
+        print j
+        time.sleep(1)
+
+    sys.exit(0)
 
     for i in range(0, 20):
         freq.sample()
