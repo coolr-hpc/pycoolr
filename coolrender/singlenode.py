@@ -323,7 +323,7 @@ while True:
     # XXX: quick dirty for now
     plt.subplot(2,4,subplotidx)
     subplotidx = subplotidx + 1
-    nbars = config["ncpu"]*4
+    nbars = info['ncpus']
     plt.axis([0, nbars , config["freqmin"], config["freqmax"]])
 
     offset = 0
@@ -389,7 +389,8 @@ while True:
     #
     # cmap
     #
-    for pkgid in range(0, 2): # this only works with dual sockets
+    if False:
+    #for pkgid in range(0, 2): # this only works with dual sockets
         plt.subplot(2,4,subplotidx+pkgid)
 
         pn = 'p%d' % pkgid
