@@ -27,7 +27,8 @@ import keypress
 import clr_rapl
 import clr_hwmon
 import clr_nodeinfo
-import clr_amperf
+#import clr_amperf
+import clr_cpufreq
 
 from clr_misc import *
 
@@ -53,7 +54,8 @@ class coolrmon_tracer:
             self.logger(s)
 
     def sample_freq(self,label):
-        s = self.amp.sample_and_json()
+        #s = self.amp.sample_and_json()
+        s = self.freq.sample_and_json()
         self.logger(s)
 
     def sample_temp(self,label):
@@ -127,7 +129,8 @@ class coolrmon_tracer:
         self.rapl = clr_rapl.rapl_reader()
         self.oc = clr_nodeinfo.osconfig()
         self.ct = clr_nodeinfo.cputopology()
-        self.amp = clr_amperf.amperf_reader()
+        #self.amp = clr_amperf.amperf_reader()
+        self.freq =  clr_cpufreq.cpufreq_reader()
         self.acpi = clr_hwmon.acpi_power_meter_reader()
 
     def showconfig(self):
