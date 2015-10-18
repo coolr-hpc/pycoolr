@@ -50,16 +50,16 @@ def usage():
 class coolrmon_tracer:
     def sample_acpi(self, label):
         if self.acpi.initialized():
-            s = self.acpi.sample_and_json(node=self.ct.getmachinename())
+            s = self.acpi.sample_and_json(node=self.nc.nodename)
             self.logger(s)
 
     def sample_freq(self,label):
         #s = self.amp.sample_and_json()
-        s = self.freq.sample_and_json(node=self.ct.getmachinename())
+        s = self.freq.sample_and_json(node=self.nc.nodename)
         self.logger(s)
 
     def sample_temp(self,label):
-        s = self.ctr.sample_and_json(node=self.ct.getmachinename())
+        s = self.ctr.sample_and_json(node=self.nc.nodename)
         self.logger(s)
 
     def sample_energy(self, label):
@@ -68,7 +68,7 @@ class coolrmon_tracer:
         if label == 'run' :
             accflag = True
         s = self.rapl.sample_and_json(label, accflag,\
-                                          node=self.ct.getmachinename())
+                                          node=self.nc.nodename)
         self.logger(s)
 
     def cooldown(self,label):
@@ -109,19 +109,17 @@ class coolrmon_tracer:
         # instantiate class
         self.ctr = clr_hwmon.coretemp_reader()
         self.rapl = clr_rapl.rapl_reader()
-        self.oc = clr_nodeinfo.osconfig()
+        self.nc = clr_nodeinfo.nodeconfig()
         self.ct = clr_nodeinfo.cputopology()
         #self.amp = clr_amperf.amperf_reader()
         self.freq =  clr_cpufreq.cpufreq_reader()
         self.acpi = clr_hwmon.acpi_power_meter_reader()
 
     def showconfig(self):
-        s  = '{"kernelversion":"%s"' % self.oc.version
-        s += ',"freqdriver":"%s"' % self.oc.freqdriver
-
-        #add detailed params later
-        #s += ',"cpufreq_governor":"%s"' % self.oc.governor
-        #s += ',"cpufreq_cur_freq":%s' % self.oc.cur_freq
+        s  = '{"kernelversion":"%s"' % self.nc.version
+        s += ',"cpumodel":%d' % self.nc.cpumodel
+        s += ',"memoryKB":%d' % self.nc.memoryKB
+        s += ',"freqdriver":"%s"' % self.nc.freqdriver
 
         ncpus = len(self.ct.onlinecpus)
         s += ',"ncpus":%d' % ncpus
@@ -263,12 +261,6 @@ if __name__ == '__main__':
     for o, a in opts:
         if o in ('-h'):
             usage()
-            sys.exit(0)
-        elif o in ("--runtests"):
-            testosconfig()
-            testcputopology()
-            testtemp()
-            testrapl()
             sys.exit(0)
         elif o in ("-C", "--cooldown"):
             tr.setcooldowntemp(int(a))
