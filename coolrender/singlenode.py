@@ -435,30 +435,28 @@ while True:
     l=5
     plt.text( 0.1, ypos(l), 'Linux kernel : %s' % info['kernelversion'] )
     l += 1
-    plt.text( 0.1, ypos(l), 'Freq driver : %s' % info['freqdriver'] )
+    plt.text( 0.1, ypos(l), 'Freq. driver : %s' % info['freqdriver'] )
     l += 1
-# XXX
-#    plt.text( 0.1, ypos(l), 'Freq governor : %s' % info['cpufreq_governor'] )
-#    l += 1
-#    if info['cpufreq_cur_freq'] == turbofreq:
-#        plt.text( 0.1, ypos(l), 'Turboboost %.1f - %.1f GHz' % (freqnorm, freqmax) )
-#    else:
-#        plt.text( 0.1, ypos(l), 'Current freq. : %s Hz' % info['cpufreq_cur_freq'] )
+    plt.text( 0.1, ypos(l), 'MemoryKB : %s' % info['memoryKB'] )
+    l += 1
+    plt.text( 0.1, ypos(l), 'CPU model : %s' % info['cpumodel'] )
+    l += 1
+    plt.text( 0.1, ypos(l), '# of procs : %s' % info['ncpus'] )
+    l += 1
+    plt.text( 0.1, ypos(l), '# of pkgs : %s' % info['npkgs'] )
 
+    a = info['pkg0phyid']
+    ht = 'enabled'
+    if len(a) == len(set(a)):
+        ht = 'disabled'
     l += 1
-
+    plt.text( 0.1, ypos(l), 'Hyperthread : %s' % ht)
+        
     l += 1
-    plt.text( 0.1, ypos(l), 'Powewcap pkg0 : %d Watt' % s_powercap['p0'] )
+    plt.text( 0.1, ypos(l), 'Powercap pkg0 : %d Watt' % s_powercap['p0'] )
     l += 1
     plt.text( 0.1, ypos(l), 'Powercap pkg1 : %d Watt' % s_powercap['p1'] )
 
-    l += 1
-    l += 1
-    plt.text( 0.1, ypos(l), config["mdesc1"] )
-    l += 1
-    plt.text( 0.1, ypos(l), config["mdesc2"] )
-    l += 1
-    plt.text( 0.1, ypos(l), config["mdesc3"] )
     l += 1
 
     #
