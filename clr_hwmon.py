@@ -101,11 +101,13 @@ class coretemp_reader :
             ret[pkgid] = temps
         return ret
 
-    def sample_and_json(self):
+    def sample_and_json(self,node = ""):
         temp = self.readtempall()
         # constructing a json output
-        s  = '{"sample":"temp", "node":"%s", "time":%.3f' \
-            % (self.ct.getmachinename(), time.time())
+        s  = '{"sample":"temp","time":%.3f' \
+            % (time.time())
+        if len(node) > 0:
+            s += ',"node":"%s"' % node
         for p in sorted(temp.keys()):
             s += ',"p%d":{' % p
 
@@ -184,12 +186,14 @@ class acpi_power_meter_reader :
         f.close()
         return retval
 
-    def sample_and_json(self):
+    def sample_and_json(self, node=""):
         if not self.init:
             return ''
 
         pwr = self.read()
-        buf = '{"sample":"acpi",'
+        buf = '{"sample":"acpi", "time":%.3f' % time.time()
+        if len(node) > 0:
+            s += ',"node":"%s"' % node
         buf += '"power":%.2lf}' % pwr
 
         return buf

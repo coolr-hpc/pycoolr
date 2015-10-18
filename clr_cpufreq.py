@@ -176,14 +176,16 @@ class cpufreq_reader:
 
         return ret
 
-    def sample_and_json(self):
+    def sample_and_json(self, node=""):
         if not self.init:
             return ''
 
         self.sample()
         f = self.aperf()
 
-        buf = '{"sample":"freq"'
+        buf = '{"sample":"freq", "time":%.3f' % time.time()
+        if len(node) > 0:
+            buf += ',"node":"%s"' % node
         for p in sorted(self.ct.pkgcpus.keys()):
             tmp = [f[i] for i in self.ct.pkgcpus[p]]
             freqmean = np.mean(tmp)

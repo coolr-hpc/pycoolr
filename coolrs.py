@@ -50,16 +50,16 @@ def usage():
 class coolrmon_tracer:
     def sample_acpi(self, label):
         if self.acpi.initialized():
-            s = self.acpi.sample_and_json()
+            s = self.acpi.sample_and_json(node=self.ct.getmachinename())
             self.logger(s)
 
     def sample_freq(self,label):
         #s = self.amp.sample_and_json()
-        s = self.freq.sample_and_json()
+        s = self.freq.sample_and_json(node=self.ct.getmachinename())
         self.logger(s)
 
     def sample_temp(self,label):
-        s = self.ctr.sample_and_json()
+        s = self.ctr.sample_and_json(node=self.ct.getmachinename())
         self.logger(s)
 
     def sample_energy(self, label):
@@ -67,7 +67,8 @@ class coolrmon_tracer:
         accflag = False
         if label == 'run' :
             accflag = True
-        s = self.rapl.sample_and_json(label, accflag)
+        s = self.rapl.sample_and_json(label, accflag,\
+                                          node=self.ct.getmachinename())
         self.logger(s)
 
     def cooldown(self,label):
