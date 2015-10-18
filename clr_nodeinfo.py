@@ -5,7 +5,7 @@
 # Contact: Kazutomo Yoshii <ky@anl.gov>
 #
 
-import os, sys, re, time
+import os, sys, re, time, socket
 
 # local
 from clr_misc import *
@@ -54,8 +54,15 @@ class cputopology:
 
         return ret
 
+    def getmachinename(self):
+        return self.hostname.split('.')[0]
+
     def detect(self):
         self.onlinecpus = self.parserange(self.cpubasedir + 'online')
+
+        self.hostname = socket.gethostname()
+
+
 
         self.pkgcpus = {}
         for cpuid in self.onlinecpus:
@@ -151,7 +158,10 @@ def  testosconfig():
 
 def testcputopology():
     print '=== ', sys._getframe().f_code.co_name
+
     ct = cputopology()
+    print
+    print 'machine: ', ct.getmachinename()
     print
     print 'No. of online cpus: ', len(ct.onlinecpus)
     print

@@ -59,30 +59,8 @@ class coolrmon_tracer:
         self.logger(s)
 
     def sample_temp(self,label):
-        temp = self.ctr.readtempall()
-        # constructing a json output
-        # this should go to clr_hwmon
-        s  = '{"sample":"temp", "time":%.3f' % (time.time())
-        s += ',"label":"%s"' % label
-        for p in sorted(temp.keys()):
-            s += ',"p%d":{' % p
-
-            pstat = self.ctr.getpkgstats(temp, p)
-
-            s += '"mean":%.2lf ' % pstat[0]
-            s += ',"std":%.2lf ' % pstat[1]
-            s += ',"min":%.2lf ' % pstat[2]
-            s += ',"max":%.2lf ' % pstat[3]
-            
-            for c in sorted(temp[p].keys()):
-                s += ',"%s":%d' % (c, temp[p][c])
-            s += '}'
-        s += '}'
-
+        s = self.ctr.sample_and_json()
         self.logger(s)
-
-        return temp
-
 
     def sample_energy(self, label):
 
@@ -98,9 +76,12 @@ class coolrmon_tracer:
 
         while True: 
             self.sample_energy(label)
-            temp = self.sample_temp(label)
+            self.sample_temp(label)
 
             # currently use only maxcoretemp
+            # XXX: readtempall() is called from sample_temp()
+            # possible to optimize this
+            temp = self.ctr.readtempall()
             maxcoretemp = self.ctr.getmaxcoretemp(temp)
             if maxcoretemp < self.cooldowntemp:
                 break
