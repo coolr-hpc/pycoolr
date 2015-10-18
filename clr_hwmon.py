@@ -47,7 +47,6 @@ class coretemp_reader :
             self.pkgtempfn = ''
 
     def __init__ (self):
-        self.ct = cputopology()
 
         self.coretemp = {} # use pkgid as  key
         for d1 in os.listdir(self.hwmondir):
