@@ -1,16 +1,23 @@
 #!/usr/bin/env python
 
 #
-# 
+# Reconstructing graph from recorded data
 #
+# Where can I get?
+# - a list of machines
+# - a list of sample targets
+# 
 
 import os, sys, time, re
 import json
 
-class offline_data:
+class reconstruct:
 
     def __init__(self,fn):
-        self.read_coolr(fn)
+        self.fn = fn
+
+
+
 
     def read_coolr(self,fn):
         with open(fn, 'r') as f:
@@ -24,7 +31,7 @@ class offline_data:
 
 if __name__ == "__main__":
 
-    odata = offline_data("testdata/dgemmtest-coolrs.json")
+    odata = offline_data("data/log")
 
 
     print odata.npkgs
