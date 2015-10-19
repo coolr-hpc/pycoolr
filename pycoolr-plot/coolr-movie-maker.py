@@ -18,14 +18,14 @@ import numpy as np
 from genframes import *
 from listrotate import *
 
-monitor=False
+monitor=True
 
 import matplotlib
 if not monitor:
     matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
-matplotlib.rcParams.update({'font.size': 8})
+matplotlib.rcParams.update({'font.size': 10})
 from clr_matplot_graphs import *
 
 
@@ -36,7 +36,7 @@ from clr_matplot_graphs import *
 fps = 1
 lrlen = 120  # this is for listrotate. the size of array
 gxsec = lrlen * (1.0/fps) # graph x-axis sec
-dpi = 160  # for writer.saving(). is this actually dpi, btw?
+dpi = 120  # for writer.saving()
 outputfn = 'm.mp4'
 
 
@@ -94,7 +94,7 @@ writer = FFMpegWriter(fps=2,
                       dict(title='foobar', artist='COOLR', comment='no comment'))
 
 
-fig = plt.figure()
+fig = plt.figure( figsize=(15,10) )
 
 if monitor:
     plt.ion()
@@ -118,6 +118,11 @@ ax = plt.subplot(row,col,idx)
 pl_rapl = plot_rapl(ax, params, raplpkg_lr, raplmem_lr)
 idx += 1
 #
+ax = plt.subplot(row,col,idx)
+pl_info = plot_info(ax, params)
+idx += 1
+
+
 fig.tight_layout()
 
 #
@@ -142,7 +147,7 @@ def draw_frames():
                 v0 = tempd['p%d' % p]['mean']
                 v1 = tempd['p%d' % p]['std']
                 temp_lr[p].add(t,v0,v1)
-        pl_temp.update(params, temp_lr)
+            pl_temp.update(params, temp_lr)
         #
         if not freqd == None:
             for p in range(npkgs):
@@ -151,7 +156,7 @@ def draw_frames():
                 v0 = freqd['p%d' % p]['mean']
                 v1 = freqd['p%d' % p]['std']
                 freq_lr[p].add(t,v0,v1)
-        pl_freq.update(params, freq_lr, ptype = 'freq')
+            pl_freq.update(params, freq_lr, ptype = 'freq')
         #
         if not rapld == None:
             for p in range(npkgs):
@@ -168,10 +173,8 @@ def draw_frames():
                 v = rapld['energy']['p%d/dram' % p]
                 vp = rapld['power']['p%d/dram' % p]
                 raplmem_lr[p].add(t,v)
-
-
-        pl_rapl.update(params, raplpkg_lr, raplmem_lr)
-
+            pl_rapl.update(params, raplpkg_lr, raplmem_lr)
+        #
 
         if monitor:
             plt.draw()

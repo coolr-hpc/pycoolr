@@ -18,6 +18,76 @@ from matplotlib._png import read_png
 
 from listrotate import *
 
+class plot_info:
+    def ypos(self,i):
+        return 1.0 - 0.05*i
+
+    def __init__(self, ax, params):
+        self.ax = ax
+
+        dir=os.path.abspath(os.path.dirname(sys.argv[0]))
+
+        ax.axis([0,1,0,1])
+        ax.axes.get_xaxis().set_visible(False)
+        ax.axes.get_yaxis().set_visible(False)
+        ax.set_frame_on=True
+
+        cfg = params['cfg']
+        info = params['info']
+
+        xoff = 0.05
+
+        l=1
+#        for p in range(info['npkgs']):
+#           ax.text( 0.1, self.ypos(l), 'CPU PKG%d' % p, color=params['pkgcolors'][p] )
+#            l += 1
+#        l += 2
+
+        ax.text(xoff, self.ypos(l), '[INFO]' )
+        l += 2
+        ax.text(xoff, self.ypos(l), 'Description : %s' % cfg['desc'] )
+        l += 1
+        ax.text(xoff, self.ypos(l), 'Node : %s' % info['nodeinfo'] )
+        l += 1
+        ax.text(xoff, self.ypos(l), 'Linux kernel : %s' % info['kernelversion'] )
+        l += 1
+        plt.text( xoff, self.ypos(l), 'Freq. driver : %s' % info['freqdriver'] )
+        l += 1
+        plt.text( xoff, self.ypos(l), 'MemoryKB : %s' % info['memoryKB'] )
+        l += 1
+        plt.text( xoff, self.ypos(l), 'CPU model : %s' % info['cpumodel'] )
+        l += 1
+        plt.text( xoff, self.ypos(l), '# of procs : %s' % info['ncpus'] )
+        l += 1
+        plt.text( xoff, self.ypos(l), '# of pkgs : %s' % info['npkgs'] )
+
+        a = info['pkg0phyid']
+        ht = 'enabled'
+        if len(a) == len(set(a)):
+            ht = 'disabled'
+        l += 1
+        plt.text( xoff, self.ypos(l), 'Hyperthread : %s' % ht)
+#        l += 1
+#        plt.text( xoff, ypos(l), 'Powercap pkg0 : %d Watt' % s_powercap['p0'] )
+#        l += 1
+#        plt.text( xoff, ypos(l), 'Powercap pkg1 : %d Watt' % s_powercap['p1'] )
+#        l += 1
+
+
+        fn = get_sample_data("%s/coolr-logo-poweredby-48.png" % dir, asfileobj=False)
+        arr = read_png(fn)
+        imagebox = OffsetImage(arr, zoom=0.5)
+        ab = AnnotationBbox(imagebox, (0, 0),
+                            xybox=(.75, .12),
+                            xycoords='data',
+                            boxcoords="axes fraction",
+                            pad=0.5)
+        ax.add_artist(ab)
+
+    def update(self, n):
+        # self.text1.set_text('%d' % n)
+        s = 'dummy'
+
 
 class plot_rapl:
     def __init__(self, ax, params, ppkg, pmem):
@@ -31,7 +101,17 @@ class plot_rapl:
         cfg = params['cfg']
         cur_t = params['cur']
         gxsec = params['gxsec']
+
+        self.ax.cla() # this is a brute-force way to update
+
         self.ax.axis([cur_t-gxsec, cur_t, cfg['pwrmin'], cfg['pwrmax']]) # [xmin,xmax,ymin,ymax]
+
+        pkgid = 0
+        for t in ppkg:
+            x = t.getlistx()
+            ycap = t.getlisto()
+            self.ax.plot(x,ycap, scaley=False, color='red', label='PKG%dlimit'%pkgid )
+            pkgid += 1
 
         pkgid = 0
         for t in ppkg:
@@ -41,12 +121,9 @@ class plot_rapl:
                 if a < 0.0:
                     a = a + params["info"]["max_energy_uj"]["p%d" % pkgid]
                 y.append(a*1e-6)
-            ycap = t.getlisto()
-
             self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], label='PKG%d'%pkgid)
-            self.ax.plot(x,ycap, scaley=False, color='red' )
-
             pkgid += 1
+
 
         pkgid = 0
         for t in pmem:
@@ -59,6 +136,11 @@ class plot_rapl:
 
             self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], label='PKG%ddram'%pkgid)
             pkgid += 1
+
+        self.ax.legend(loc='upper left', prop={'size':10})
+        self.ax.set_xlabel('Time [S]')
+        self.ax.set_ylabel('Power [W]')
+
 
 
 class plot_line_err: # used for temp and freq (mean+std)
@@ -93,13 +175,14 @@ class plot_line_err: # used for temp and freq (mean+std)
             pkgid += 1
 
         # we need to update labels everytime because of cla()
-        self.ax.set_xlabel('Uptime [S]')
+        self.ax.set_xlabel('Time [S]')
         if ptype == 'temp':
             self.ax.set_ylabel('Core temperature [C]')
         elif ptype == 'freq':
             self.ax.set_ylabel('Frequency [GHz]')
         else:
             self.ax.set_ylabel('Unknown')
+        self.ax.legend(loc='upper left', prop={'size':10})
 
 # below are kind of examples
 #
