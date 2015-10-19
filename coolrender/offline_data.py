@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
 #
-# Reconstructing graph from recorded data
+# Reconstructing graph from recorded data by "realtime plot"
 #
-# Where can I get?
-# - a list of machines
-# - a list of sample targets
+# Kazutomo Yoshii <ky@anl.gov>
 # 
 
 import os, sys, time, re
