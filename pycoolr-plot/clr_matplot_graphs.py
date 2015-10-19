@@ -53,13 +53,15 @@ class plot_info:
         l += 1
         plt.text( xoff, self.ypos(l), 'Freq. driver : %s' % info['freqdriver'] )
         l += 1
-        plt.text( xoff, self.ypos(l), 'MemoryKB : %s' % info['memoryKB'] )
+        plt.text( xoff, self.ypos(l), 'Memory [GB] : %d' % (int(info['memoryKB'])/1024/1024) )
         l += 1
         plt.text( xoff, self.ypos(l), 'CPU model : %s' % info['cpumodel'] )
         l += 1
-        plt.text( xoff, self.ypos(l), '# of procs : %s' % info['ncpus'] )
+        plt.text( xoff, self.ypos(l), 'No of procs : %s' % info['ncpus'] )
         l += 1
-        plt.text( xoff, self.ypos(l), '# of pkgs : %s' % info['npkgs'] )
+        plt.text( xoff, self.ypos(l), 'No of pkgs : %s' % info['npkgs'] )
+        l += 1
+        plt.text( xoff, self.ypos(l), 'No of NUMA nodes: %d' % info['nnodes'] )
 
         a = info['pkg0phyid']
         ht = 'enabled'

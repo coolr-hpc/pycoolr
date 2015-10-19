@@ -33,7 +33,7 @@ from clr_matplot_graphs import *
 #
 
 # XXX: add these to the option later
-fps = 1
+fps = 2
 lrlen = 120  # this is for listrotate. the size of array
 gxsec = lrlen * (1.0/fps) # graph x-axis sec
 dpi = 120  # for writer.saving()
@@ -61,7 +61,7 @@ ncpus = info['ncpus']
 #
 # 
 frames.setfps(fps)
-nframes = frames.nframes  % 60 # just for debugging
+nframes = frames.nframes # % 60 # just for debugging
 ts = frames.ts  # the start time
 
 #
@@ -74,10 +74,13 @@ params['gxsec'] = gxsec
 params['cur'] = ts  # this will be updated
 params['pkgcolors'] = [ 'blue', 'green' ] # for now
 
+# create frame data from time-series data
+# frame data is a list with frameno as index
 temp_data = frames.getlist(node,'temp')
 freq_data = frames.getlist(node,'freq')
 rapl_data = frames.getlist(node,'energy')
 
+# listrotate is used for plotting function in matplotlib
 # CUSTOMIZE when need more details
 temp_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 freq_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
