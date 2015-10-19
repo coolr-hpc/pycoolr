@@ -76,9 +76,9 @@ class plot_info:
 
         fn = get_sample_data("%s/coolr-logo-poweredby-48.png" % dir, asfileobj=False)
         arr = read_png(fn)
-        imagebox = OffsetImage(arr, zoom=0.5)
+        imagebox = OffsetImage(arr, zoom=0.6)
         ab = AnnotationBbox(imagebox, (0, 0),
-                            xybox=(.75, .12),
+                            xybox=(.8, .1),
                             xycoords='data',
                             boxcoords="axes fraction",
                             pad=0.5)
@@ -87,6 +87,32 @@ class plot_info:
     def update(self, n):
         # self.text1.set_text('%d' % n)
         s = 'dummy'
+
+
+class plot_totpwr:
+    def __init__(self, ax, params, rapltotpwr):
+        self.ax = ax
+
+        # too lazy to figure out axhspan's object. fix this later
+        self.update(params, rapltotpwr)
+
+    def update(self, params, rapltotpwr):
+
+        cfg = params['cfg']
+        cur_t = params['cur']
+        gxsec = params['gxsec']
+
+        self.ax.cla() # this is a brute-force way to update
+
+        self.ax.axis([cur_t-gxsec, cur_t, cfg['pwrmin'], cfg['acpwrmax']]) # [xmin,xmax,ymin,ymax]
+
+        x = rapltotpwr.getlistx()
+        y = rapltotpwr.getlisty()
+        self.ax.plot(x,y, scaley=False, color='black', label='RAPL total' )
+
+        self.ax.legend(loc='lower left', prop={'size':9})
+        self.ax.set_xlabel('Time [S]')
+        self.ax.set_ylabel('Power [W]')
 
 
 class plot_rapl:
@@ -116,11 +142,7 @@ class plot_rapl:
         pkgid = 0
         for t in ppkg:
             x = t.getlistx()
-            y = []
-            for a in t.getlistr():
-                if a < 0.0:
-                    a = a + params["info"]["max_energy_uj"]["p%d" % pkgid]
-                y.append(a*1e-6)
+            y = t.getlisty()
             self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], label='PKG%d'%pkgid)
             pkgid += 1
 
@@ -128,16 +150,11 @@ class plot_rapl:
         pkgid = 0
         for t in pmem:
             x = t.getlistx()
-            y = []
-            for a in t.getlistr():
-                if a < 0.0:
-                    a = a + params["info"]["max_energy_uj"]["p%d" % pkgid]
-                y.append(a*1e-6)
-
+            y = t.getlisty()
             self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], label='PKG%ddram'%pkgid)
             pkgid += 1
 
-        self.ax.legend(loc='upper left', prop={'size':10})
+        self.ax.legend(loc='lower left', prop={'size':9})
         self.ax.set_xlabel('Time [S]')
         self.ax.set_ylabel('Power [W]')
 
@@ -182,7 +199,7 @@ class plot_line_err: # used for temp and freq (mean+std)
             self.ax.set_ylabel('Frequency [GHz]')
         else:
             self.ax.set_ylabel('Unknown')
-        self.ax.legend(loc='upper left', prop={'size':10})
+        self.ax.legend(loc='lower left', prop={'size':9})
 
 # below are kind of examples
 #

@@ -25,7 +25,7 @@ if not monitor:
     matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
-matplotlib.rcParams.update({'font.size': 10})
+matplotlib.rcParams.update({'font.size': 12})
 from clr_matplot_graphs import *
 
 
@@ -61,7 +61,7 @@ ncpus = info['ncpus']
 #
 # 
 frames.setfps(fps)
-nframes = frames.nframes % 60 # just for debugging
+nframes = frames.nframes  % 60 # just for debugging
 ts = frames.ts  # the start time
 
 #
@@ -83,7 +83,9 @@ temp_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 freq_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 raplpkg_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 raplmem_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
-rapltot_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
+raplpkgpwr_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
+raplmempwr_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
+rapltotpwr_lr = listrotate2D(length=lrlen)
 #
 #
 #
@@ -91,7 +93,7 @@ rapltot_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 FFMpegWriter = manimation.writers['ffmpeg']
 writer = FFMpegWriter(fps=2, 
                       metadata=
-                      dict(title='foobar', artist='COOLR', comment='no comment'))
+                      dict(title='foobar', artist='COOLR', comment='no comment'),bitrate=8000)
 
 
 fig = plt.figure( figsize=(15,10) )
@@ -116,6 +118,10 @@ idx += 1
 #
 ax = plt.subplot(row,col,idx)
 pl_rapl = plot_rapl(ax, params, raplpkg_lr, raplmem_lr)
+idx += 1
+#
+ax = plt.subplot(row,col,idx)
+pl_totpwr = plot_totpwr(ax, params, rapltotpwr_lr)
 idx += 1
 #
 ax = plt.subplot(row,col,idx)
@@ -164,16 +170,29 @@ def draw_frames():
                 params['cur'] = t
                 # need to calculate the rate
                 v = rapld['energy']['p%d' % p]
-                vp = rapld['power']['p%d' % p]
-                vc = rapld['powercap']['p%d' % p]
-                # power may be off because 
+                #vp = rapld['power']['p%d' % p]
+                # vp may be off because 
                 # instantaneous power at sampling 
-                # adding this number just for comparion
-                raplpkg_lr[p].add(t,v,vc)
+                raplpkg_lr[p].add(t,v)
                 v = rapld['energy']['p%d/dram' % p]
-                vp = rapld['power']['p%d/dram' % p]
+                #vp = rapld['power']['p%d/dram' % p]
                 raplmem_lr[p].add(t,v)
-            pl_rapl.update(params, raplpkg_lr, raplmem_lr)
+                #
+                # get the power from the rate of the change
+                pwrpkg = raplpkg_lr[p].getlastr()
+                if pwrpkg < 0.0:
+                    pwrpkg += params["info"]["max_energy_uj"]["p%d" % pkgid]
+                pwrpkg *= 1e-6
+                pwrmem = raplmem_lr[p].getlastr()
+                if pwrmem < 0.0:
+                    pwrmem += params["info"]["max_energy_uj"]["p%d" % pkgid]
+                pwrmem *= 1e-6
+                vc = rapld['powercap']['p%d' % p]
+                raplpkgpwr_lr[p].add(t,pwrpkg, vc)
+                raplmempwr_lr[p].add(t,pwrmem)
+                rapltotpwr_lr.add(t,pwrpkg + pwrmem)
+            pl_rapl.update(params, raplpkgpwr_lr, raplmempwr_lr)
+            pl_totpwr.update(params, rapltotpwr_lr)
         #
 
         if monitor:
