@@ -18,7 +18,50 @@ from matplotlib._png import read_png
 
 from listrotate import *
 
-class plot_line_err:
+
+class plot_rapl:
+    def __init__(self, ax, params, ppkg, pmem):
+        self.ax = ax
+
+        # too lazy to figure out axhspan's object. fix this later
+        self.update(params, ppkg, pmem)
+
+    def update(self, params, ppkg, pmem):
+
+        cfg = params['cfg']
+        cur_t = params['cur']
+        gxsec = params['gxsec']
+        self.ax.axis([cur_t-gxsec, cur_t, cfg['pwrmin'], cfg['pwrmax']]) # [xmin,xmax,ymin,ymax]
+
+        pkgid = 0
+        for t in ppkg:
+            x = t.getlistx()
+            y = []
+            for a in t.getlistr():
+                if a < 0.0:
+                    a = a + params["info"]["max_energy_uj"]["p%d" % pkgid]
+                y.append(a*1e-6)
+            ycap = t.getlisto()
+
+            self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], label='PKG%d'%pkgid)
+            self.ax.plot(x,ycap, scaley=False, color='red' )
+
+            pkgid += 1
+
+        pkgid = 0
+        for t in pmem:
+            x = t.getlistx()
+            y = []
+            for a in t.getlistr():
+                if a < 0.0:
+                    a = a + params["info"]["max_energy_uj"]["p%d" % pkgid]
+                y.append(a*1e-6)
+
+            self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], label='PKG%ddram'%pkgid)
+            pkgid += 1
+
+
+class plot_line_err: # used for temp and freq (mean+std)
     def __init__(self, ax, params, pdata, ptype = 'temp' ):
         self.ax = ax
 
@@ -28,15 +71,15 @@ class plot_line_err:
         
     def update(self, params, pdata, ptype = 'temp'):
         cfg = params['cfg']
-
         cur_t = params['cur']
         gxsec = params['gxsec']
 
-        self.ax.cla() # don't know how to update errorbar
+        self.ax.cla() # this is a brute-force way to update. I don't know how to update errorbar correctly.
         if ptype == 'temp':
             self.ax.axis([cur_t-gxsec, cur_t, cfg['mintemp'], cfg['maxtemp']]) # [xmin,xmax,ymin,ymax]
         elif ptype == 'freq':
             self.ax.axis([cur_t-gxsec, cur_t, cfg['freqmin'], cfg['freqmax']]) # [xmin,xmax,ymin,ymax]
+            plt.axhspan(cfg["freqnorm"], cfg["freqmax"], facecolor='#eeeeee', alpha=0.5)
         else:
             self.ax.axis([cur_t-gxsec, cur_t, 0, 100]) # [xmin,xmax,ymin,ymax]
 
@@ -45,7 +88,7 @@ class plot_line_err:
             x = t.getlistx()
             y = t.getlisty()
             e = t.getlisto()
-            self.ax.plot(x,y,scaley=False,label='PKG%d'%pkgid)
+            self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], label='PKG%d'%pkgid)
             self.ax.errorbar(x,y,yerr=e, lw=.2, color=params['pkgcolors'][pkgid], label = '')
             pkgid += 1
 
