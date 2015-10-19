@@ -14,16 +14,20 @@
 
 import time, sys, os
 import numpy as np
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.animation as manimation
-matplotlib.rcParams.update({'font.size': 8})
-
-from clr_matplot_graphs import *
 
 from genframes import *
 from listrotate import *
+
+monitor=False
+
+import matplotlib
+if not monitor:
+    matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.animation as manimation
+matplotlib.rcParams.update({'font.size': 8})
+from clr_matplot_graphs import *
+
 
 #
 #
@@ -92,6 +96,10 @@ writer = FFMpegWriter(fps=2,
 
 fig = plt.figure()
 
+if monitor:
+    plt.ion()
+    plt.show()
+
 # define fig's layout
 # CUSTOMIZE
 col = 3
@@ -116,9 +124,7 @@ fig.tight_layout()
 #
 #
 
-print 'Generating %s with %d frames ...' % (outputfn, nframes)
-st = time.time()
-with writer.saving(fig, outputfn, dpi):
+def draw_frames():
     for i in range(nframes):
         print 'frame:%04d/%04d / %5.1lf %%' % (i,nframes, (100.*i/nframes))
         #
@@ -167,10 +173,15 @@ with writer.saving(fig, outputfn, dpi):
         pl_rapl.update(params, raplpkg_lr, raplmem_lr)
 
 
-        #
-        #
-        writer.grab_frame()
+        if monitor:
+            plt.draw()
+        else:
+            writer.grab_frame()
 
+print 'Generating %s with %d frames ...' % (outputfn, nframes)
+st = time.time()
+with writer.saving(fig, outputfn, dpi):
+    draw_frames()
 elapsed = time.time() - st
 
 print 'elapsed: %3lf' % elapsed
