@@ -11,7 +11,7 @@ import json
 import numpy as np
 import math
 
-class reconstruct:
+class genframes:
 
     def __init__(self, jsonfn):
         # key is nodename
@@ -73,7 +73,7 @@ class reconstruct:
         self.ts, self.te = self.gettimerange()
         self.fps = fps
         self.interval = 1.0/fps
-        self.nframes =  int((te-ts)/self.interval) - 1
+        self.nframes =  int((self.te-self.ts)/self.interval) - 1
         # index for each samples. (may not be used)
         self.sampleidx = {}
         for n in self.data.keys():
@@ -105,7 +105,7 @@ class reconstruct:
     
 if __name__ == "__main__":
 
-    r = reconstruct("testdata/chameleon.json")
+    r = genframes("testdata/chameleon.json")
 
     nodes = r.getnodes()
     print nodes
