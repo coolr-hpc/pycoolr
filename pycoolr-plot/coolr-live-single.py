@@ -34,7 +34,9 @@ print 'Output :', outputfn
 plotapp = False
 #maxpoints = 360
 maxpoints = 120
-interval = 1
+interval = 0.1
+# technically 'interval' is the wait time after drawing
+# since drawing takes more than 1sec now, setting a smaller number is ok
 
 #
 #
@@ -164,6 +166,7 @@ while True:
     #
     # querying
     #
+    profile_st = time.time()
     
     sample = querydataj("--sample")
     s_temp = sample[0]
@@ -242,6 +245,9 @@ while True:
     totalpowerqs.append( totalpower )
 
     prev_t = cur_t
+
+    profile_t1 = time.time()
+
 
     # update the plot
     plt.clf() 
@@ -467,6 +473,15 @@ while True:
     fig.tight_layout()
 
     plt.draw()
-    time.sleep(interval-0.1)
+
+    profile_t2 = time.time()
+
+    time.sleep(interval)
+
+    profile_t3 = time.time()
+
+    print '%.2lf sec/loop (%.2lf %.2lf %.2lf)' %\
+        (profile_t3-profile_st, profile_t1-profile_st, profile_t2-profile_t1, profile_t3-profile_t2)
+
 
 sys.exit(0)
