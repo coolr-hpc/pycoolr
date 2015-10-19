@@ -105,7 +105,7 @@ class reconstruct:
     
 if __name__ == "__main__":
 
-    r = reconstruct("chameleon.json")
+    r = reconstruct("testdata/chameleon.json")
 
     nodes = r.getnodes()
     print nodes
