@@ -19,21 +19,40 @@ from matplotlib._png import read_png
 from listrotate import *
 
 class plot_temp:
-    def __init__(self, ax, temp):
+    def __init__(self, ax, params, temp):
         self.ax = ax
 
+        cfg = params['cfg']
+
+        cut_t = params['cur']
+        gxsec = params['gxsec']
+        ax.axis([cut_t-gxsec, gxsec, cfg['mintemp'], cfg['maxtemp']]) # [xmin,xmax,ymin,ymax]
+
+        pkgid = 0
         self.line = []
         for t in temp:
-            l, = ax.plot(t.getlistx(),t.getlisty())
+            l, = ax.plot(t.getlistx(),t.getlisty(), label='PKG%d'%pkgid)
             self.line.append(l)
+            pkgid += 1
 
         # get info
         self.ax.axhspan( 0.7, 1.0, facecolor='#eeeeee', alpha=1.0)
+
+
+        self.ax.set_xlabel('Uptime [S]')
+        self.ax.set_ylabel('Core temperature [C]')
         
-    def update(self, temp):
+    def update(self, params, temp):
+        cfg = params['cfg']
+
+        cut_t = params['cur']
+        gxsec = params['gxsec']
+        self.ax.axis([cut_t-gxsec, gxsec, cfg['mintemp'], cfg['maxtemp']]) # [xmin,xmax,ymin,ymax]
+
         idx = 0
         for t in temp:
             self.line[idx].set_data(t.getlistx(),t.getlisty())
+            print idx, t.getlistx()
             idx += 1
 #
 # below are kind of examples

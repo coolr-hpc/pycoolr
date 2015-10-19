@@ -22,30 +22,43 @@ from listrotate import *
 #
 
 # XXX: add these to the option later
-fps = 4 
-lrlen = 120
+fps = 1
+lrlen = 120  # this is for listrotate. the size of array
+gxsec = lrlen * (1.0/fps) # graph x-axis sec
+
 outputfn = 'm.mp4'
+
 
 #
 
-if len(sys.argv) < 2:
-    print 'Usage: %s json' % sys.argv[0]
+if len(sys.argv) < 3:
+    print 'Usage: %s config data' % sys.argv[0]
     sys.exit(1)
 
-
-frames = genframes(sys.argv[1])
+print 'Config: ', sys.argv[1]
+print 'Data: ', sys.argv[2]
+    
+with open(sys.argv[1]) as f:
+    cfg = json.load(f)
+frames = genframes(sys.argv[2])
 # XXX: single node target now
 node = frames.getnodes()[0]
 info = frames.info[node]
 npkgs = info['npkgs']
 
+#
+# 
 frames.setfps(fps)
-
-nframes = frames.nframes
+nframes = frames.nframes % 100 # just for debugging
+ts = frames.ts  # the start time
 
 #
-# connect each data set
+# data set
 #
+params = {}  # graph params
+params['cfg'] = cfg
+params['gxsec'] = gxsec
+params['cur'] = ts  # this will be updated
 
 temp_data = frames.getlist(node,'temp')
 # CUSTOMIZE
@@ -68,7 +81,7 @@ row = 1
 idx = 1
 ax = plt.subplot(row,col,idx)
 idx += 1
-l = plot_temp(ax, temp_plot_mean)
+l = plot_temp(ax, params, temp_plot_mean)
 
 fig.tight_layout()
 
@@ -76,14 +89,16 @@ print 'generating %d frames' % nframes
 st = time.time()
 with writer.saving(fig, "m.mp4", 100):
     for i in range(nframes):
+        print 'frame:', i
         d = temp_data[i]
         if not d == None:
             for p in range(npkgs):
-                t = d['time']
+                t = d['time'] - ts
                 v = d['p%d' % p]['mean']
+                print p, t,v
                 temp_plot_mean[p].add(t,v)
-            
-        l.update(temp_plot_mean)
+                params['cur'] = t
+        l.update(params, temp_plot_mean)
 
         writer.grab_frame()
 
