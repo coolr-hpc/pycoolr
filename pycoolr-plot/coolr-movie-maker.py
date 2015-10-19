@@ -50,6 +50,7 @@ frames = genframes(sys.argv[2])
 node = frames.getnodes()[0]
 info = frames.info[node]
 npkgs = info['npkgs']
+ncpus = info['ncpus']
 
 #
 # 
@@ -67,8 +68,12 @@ params['cur'] = ts  # this will be updated
 params['pkgcolors'] = [ 'blue', 'green' ] # for now
 
 temp_data = frames.getlist(node,'temp')
-# CUSTOMIZE
-temp_plot = [listrotate2D(length=lrlen) for i in range(npkgs)]
+freq_data = frames.getlist(node,'freq')
+energy_data = frames.getlist(node,'energy')
+
+# CUSTOMIZE when need more details
+temp_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
+freq_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 
 #
 #
@@ -82,12 +87,16 @@ writer = FFMpegWriter(fps=2,
 
 fig = plt.figure()
 
-col = 1
+# CUSTOMIZE
+col = 2
 row = 1
 idx = 1
 ax = plt.subplot(row,col,idx)
 idx += 1
-l = plot_temp(ax, params, temp_plot)
+pl_temp = plot_line_err(ax, params, temp_lr)
+ax = plt.subplot(row,col,idx)
+idx += 1
+pl_freq = plot_line_err(ax, params, freq_lr, ptype = 'freq' )
 
 fig.tight_layout()
 
@@ -97,20 +106,29 @@ with writer.saving(fig, outputfn, dpi):
     for i in range(nframes):
         print 'frame:%04d/%04d / %5.1lf %%' % (i,nframes, (100.*i/nframes))
         #
-        # temp graph
+        # CUSTOMIZE
         #
-        d = temp_data[i]
-        if not d == None:
+        tempd = temp_data[i]
+        freqd = freq_data[i]
+        
+        if not tempd == None:
             for p in range(npkgs):
-                t = d['time'] - ts
-                params['cur'] = t
+                t = tempd['time'] - ts
+                params['cur'] = t # this is used in update()
+                v0 = tempd['p%d' % p]['mean']
+                v1 = tempd['p%d' % p]['std']
+                temp_lr[p].add(t,v0,v1)
+        pl_temp.update(params, temp_lr)
                 
-                # CUSTOMIZE
-                v0 = d['p%d' % p]['mean']
-                v1 = d['p%d' % p]['std']
-                temp_plot[p].add(t,v0,v1)
+        if not freqd == None:
+            for p in range(npkgs):
+                t = freqd['time'] - ts
+                params['cur'] = t
+                v0 = freqd['p%d' % p]['mean']
+                v1 = freqd['p%d' % p]['std']
+                freq_lr[p].add(t,v0,v1)
 
-        l.update(params, temp_plot)
+        pl_freq.update(params, freq_lr, ptype = 'freq')
 
         #
         #

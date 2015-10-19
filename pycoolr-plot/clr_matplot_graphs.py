@@ -18,25 +18,30 @@ from matplotlib._png import read_png
 
 from listrotate import *
 
-class plot_temp:
-    def __init__(self, ax, params, temp):
+class plot_line_err:
+    def __init__(self, ax, params, pdata, ptype = 'temp' ):
         self.ax = ax
 
         # unfortunately, I couldn't figure out how to update errorbar correctly
-        self.update(params, temp)
+        self.update(params, pdata, ptype)
         
         
-    def update(self, params, temp):
+    def update(self, params, pdata, ptype = 'temp'):
         cfg = params['cfg']
 
         cur_t = params['cur']
         gxsec = params['gxsec']
 
         self.ax.cla() # don't know how to update errorbar
-        self.ax.axis([cur_t-gxsec, cur_t, cfg['mintemp'], cfg['maxtemp']]) # [xmin,xmax,ymin,ymax]
+        if ptype == 'temp':
+            self.ax.axis([cur_t-gxsec, cur_t, cfg['mintemp'], cfg['maxtemp']]) # [xmin,xmax,ymin,ymax]
+        elif ptype == 'freq':
+            self.ax.axis([cur_t-gxsec, cur_t, cfg['freqmin'], cfg['freqmax']]) # [xmin,xmax,ymin,ymax]
+        else:
+            self.ax.axis([cur_t-gxsec, cur_t, 0, 100]) # [xmin,xmax,ymin,ymax]
 
         pkgid = 0
-        for t in temp:
+        for t in pdata:
             x = t.getlistx()
             y = t.getlisty()
             e = t.getlisto()
@@ -44,10 +49,14 @@ class plot_temp:
             self.ax.errorbar(x,y,yerr=e, lw=.2, color=params['pkgcolors'][pkgid], label = '')
             pkgid += 1
 
-        # because of cla()
+        # we need to update labels everytime because of cla()
         self.ax.set_xlabel('Uptime [S]')
-        self.ax.set_ylabel('Core temperature [C]')
-
+        if ptype == 'temp':
+            self.ax.set_ylabel('Core temperature [C]')
+        elif ptype == 'freq':
+            self.ax.set_ylabel('Frequency [GHz]')
+        else:
+            self.ax.set_ylabel('Unknown')
 
 # below are kind of examples
 #
