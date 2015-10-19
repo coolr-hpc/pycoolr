@@ -192,8 +192,8 @@ class acpi_power_meter_reader :
         pwr = self.read()
         buf = '{"sample":"acpi", "time":%.3f' % time.time()
         if len(node) > 0:
-            s += ',"node":"%s"' % node
-        buf += '"power":%.2lf}' % pwr
+            buf += ',"node":"%s"' % node
+        buf += ',"power":%.2lf}' % pwr
 
         return buf
 
@@ -203,7 +203,9 @@ if __name__ == '__main__':
     acpipwr = acpi_power_meter_reader()
 
     if acpipwr.initialized():
-        print acpipwr.sample_and_json()
+        print acpipwr.sample_and_json('testnode')
+
+    sys.exit(1)
 
     ctr = coretemp_reader()
 
