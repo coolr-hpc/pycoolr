@@ -3,6 +3,11 @@
 #
 # generate a mp4 movie file from specified json file
 #
+# This tool and its config file are not flexible.
+# I marked a customizable point as 'CUSTOMIZE'
+#
+#
+#
 #
 # Kazutomo Yoshii <ky@anl.gov>
 # 
@@ -25,7 +30,7 @@ from listrotate import *
 fps = 1
 lrlen = 120  # this is for listrotate. the size of array
 gxsec = lrlen * (1.0/fps) # graph x-axis sec
-
+dpi = 160  # for writer.saving(). is this actually dpi, btw?
 outputfn = 'm.mp4'
 
 
@@ -59,10 +64,11 @@ params = {}  # graph params
 params['cfg'] = cfg
 params['gxsec'] = gxsec
 params['cur'] = ts  # this will be updated
+params['pkgcolors'] = [ 'blue', 'green' ] # for now
 
 temp_data = frames.getlist(node,'temp')
 # CUSTOMIZE
-temp_plot_mean  = [listrotate2D(length=lrlen) for i in range(npkgs)]
+temp_plot = [listrotate2D(length=lrlen) for i in range(npkgs)]
 
 #
 #
@@ -81,28 +87,37 @@ row = 1
 idx = 1
 ax = plt.subplot(row,col,idx)
 idx += 1
-l = plot_temp(ax, params, temp_plot_mean)
+l = plot_temp(ax, params, temp_plot)
 
 fig.tight_layout()
 
-print 'generating %d frames' % nframes
+print 'Generating %s with %d frames ...' % (outputfn, nframes)
 st = time.time()
-with writer.saving(fig, "m.mp4", 100):
+with writer.saving(fig, outputfn, dpi):
     for i in range(nframes):
-        print 'frame:', i
+        print 'frame:%04d/%04d / %5.1lf %%' % (i,nframes, (100.*i/nframes))
+        #
+        # temp graph
+        #
         d = temp_data[i]
         if not d == None:
             for p in range(npkgs):
                 t = d['time'] - ts
-                v = d['p%d' % p]['mean']
-                print p, t,v
-                temp_plot_mean[p].add(t,v)
                 params['cur'] = t
-        l.update(params, temp_plot_mean)
+                
+                # CUSTOMIZE
+                v0 = d['p%d' % p]['mean']
+                v1 = d['p%d' % p]['std']
+                temp_plot[p].add(t,v0,v1)
 
+        l.update(params, temp_plot)
+
+        #
+        #
         writer.grab_frame()
 
 elapsed = time.time() - st
 
 print 'elapsed: %3lf' % elapsed
 print '%.3f sec/frame' %  (float(elapsed)/nframes)
+print 'done'

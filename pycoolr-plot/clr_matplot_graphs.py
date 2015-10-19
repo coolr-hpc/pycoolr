@@ -22,39 +22,33 @@ class plot_temp:
     def __init__(self, ax, params, temp):
         self.ax = ax
 
-        cfg = params['cfg']
-
-        cut_t = params['cur']
-        gxsec = params['gxsec']
-        ax.axis([cut_t-gxsec, gxsec, cfg['mintemp'], cfg['maxtemp']]) # [xmin,xmax,ymin,ymax]
-
-        pkgid = 0
-        self.line = []
-        for t in temp:
-            l, = ax.plot(t.getlistx(),t.getlisty(), label='PKG%d'%pkgid)
-            self.line.append(l)
-            pkgid += 1
-
-        # get info
-        self.ax.axhspan( 0.7, 1.0, facecolor='#eeeeee', alpha=1.0)
-
-
-        self.ax.set_xlabel('Uptime [S]')
-        self.ax.set_ylabel('Core temperature [C]')
+        # unfortunately, I couldn't figure out how to update errorbar correctly
+        self.update(params, temp)
+        
         
     def update(self, params, temp):
         cfg = params['cfg']
 
-        cut_t = params['cur']
+        cur_t = params['cur']
         gxsec = params['gxsec']
-        self.ax.axis([cut_t-gxsec, gxsec, cfg['mintemp'], cfg['maxtemp']]) # [xmin,xmax,ymin,ymax]
 
-        idx = 0
+        self.ax.cla() # don't know how to update errorbar
+        self.ax.axis([cur_t-gxsec, cur_t, cfg['mintemp'], cfg['maxtemp']]) # [xmin,xmax,ymin,ymax]
+
+        pkgid = 0
         for t in temp:
-            self.line[idx].set_data(t.getlistx(),t.getlisty())
-            print idx, t.getlistx()
-            idx += 1
-#
+            x = t.getlistx()
+            y = t.getlisty()
+            e = t.getlisto()
+            self.ax.plot(x,y,scaley=False,label='PKG%d'%pkgid)
+            self.ax.errorbar(x,y,yerr=e, lw=.2, color=params['pkgcolors'][pkgid], label = '')
+            pkgid += 1
+
+        # because of cla()
+        self.ax.set_xlabel('Uptime [S]')
+        self.ax.set_ylabel('Core temperature [C]')
+
+
 # below are kind of examples
 #
 

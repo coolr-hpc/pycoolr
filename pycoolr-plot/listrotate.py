@@ -51,11 +51,13 @@ class listrotate2D:
         self.x = [ np.nan for i in range(length) ]
         self.y = [ np.nan for i in range(length) ]
         self.r = [ np.nan for i in range(length) ] # rate
+        self.o = [ np.nan for i in range(length) ] # option values
         self.pos = 0
 
-    def add(self, xv, yv):
+    def add(self, xv, yv, ov=None): # ov: option values
         self.x[self.pos] = xv
         self.y[self.pos] = yv
+        self.o[self.pos] = ov
         self.pos += 1
         if self.pos == self.length:
             self.pos = 0
@@ -73,6 +75,8 @@ class listrotate2D:
         return self.y[self.pos-1]
     def getlastr(self):
         return self.r[self.pos-1]
+    def getlasto(self):
+        return self.o[self.pos-1]
             
     def getlistx(self):
         if self.pos == 0:
@@ -86,7 +90,10 @@ class listrotate2D:
         if self.pos == 0:
             return self.r
         return self.r[self.pos:] + self.r[0:self.pos]
-
+    def getlisto(self):
+        if self.pos == 0:
+            return self.o
+        return self.o[self.pos:] + self.o[0:self.pos]
     
 if __name__ == '__main__':
 
