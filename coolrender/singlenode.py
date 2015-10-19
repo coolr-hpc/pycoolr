@@ -17,16 +17,19 @@ import matplotlib.cm as cm
 
 
 if len(sys.argv) < 2:
-    print 'Usage: demo.py config'
+    print 'Usage: pycoolr-plot.py config [outputfn]'
     sys.exit(1)
     
 configfile = sys.argv[1]
+outputfn = 'plotdata.json'
+if len(sys.argv) > 2:
+    outputfn = sys.argv[2]
 
 with open(configfile) as f:
     config = json.load(f)
 
 print 'Config :', configfile
-    
+print 'Output :', outputfn
 
 plotapp = False
 #maxpoints = 360
@@ -46,7 +49,7 @@ plt.ion()  # turn interactive mode on
 plt.show()
 
 try:
-    logf = open( 'data.log', 'w', 0 ) # unbuffered write
+    logf = open( outputfn, 'w', 0 ) # unbuffered write
 except:
     print 'unable to open data.log'
 
