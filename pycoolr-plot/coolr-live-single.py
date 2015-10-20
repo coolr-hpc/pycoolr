@@ -32,8 +32,9 @@ print 'Config :', configfile
 print 'Output :', outputfn
 
 plotapp = False
-#maxpoints = 360
-maxpoints = 120
+maxpoints = 360
+#maxpoints = 120
+#maxpoints = 240
 interval = 0.1
 # technically 'interval' is the wait time after drawing
 # since drawing takes more than 1sec now, setting a smaller number is ok
