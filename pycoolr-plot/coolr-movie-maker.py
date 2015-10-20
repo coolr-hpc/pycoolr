@@ -18,7 +18,7 @@ import numpy as np
 from genframes import *
 from listrotate import *
 
-monitor=False
+monitor=True
 
 import matplotlib
 if not monitor:
