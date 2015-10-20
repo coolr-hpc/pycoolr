@@ -18,7 +18,7 @@ import numpy as np
 from genframes import *
 from listrotate import *
 
-monitor=True
+monitor=False
 
 import matplotlib
 if not monitor:
@@ -51,7 +51,7 @@ print 'Data: ', ' '.join(sys.argv[2:])
     
 with open(sys.argv[1]) as f:
     cfg = json.load(f)
-frames = genframes(sys.argv[2])
+frames = genframes(sys.argv[2:])
 # XXX: single node target now
 node = frames.getnodes()[0]
 info = frames.info[node]

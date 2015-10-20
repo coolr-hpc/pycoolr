@@ -133,17 +133,17 @@ class plot_xsbench:
 
         self.ax.cla() # this is a brute-force way to update
 
-        # self.ax.axis([cur_t-gxsec, cur_t, 0, ]) # [xmin,xmax,ymin,ymax]
-        self.ax.autoscale(True)
+        self.ax.axis([cur_t-gxsec, cur_t, 0, 5 ]) # [xmin,xmax,ymin,ymax]
+        #self.ax.autoscale(True)
 
         x = lps.getlistx()
         y = lps.getlisty()
-        self.ax.plot(x,y, scaley=False, color='black', label='' )
+        #self.ax.plot(x,y, scaley=False, color='black', label='' )
+        self.ax.bar(x,y,  color='black', label='' )
 
         self.ax.legend(loc='lower left', prop={'size':9})
         self.ax.set_xlabel('Time [S]')
-        self.ax.set_ylabel('Lookup/s')
-
+        self.ax.set_ylabel('Inner-loop time [S]')
 
 
 class plot_rapl:

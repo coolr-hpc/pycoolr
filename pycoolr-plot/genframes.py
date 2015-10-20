@@ -19,24 +19,25 @@ class genframes:
         self.data = {}
 
         # load all lines at init (naive)
-        with open(jsonfn) as f:
-            while True:
-                l = f.readline()
-                if not l:
-                    break
-                j = json.loads(l)
-                if j.has_key("nodeinfo"):
-                    # one info per node, otherwise unknown
-                    self.info[j["nodeinfo"]] = j
-                elif j.has_key("sample"):
-                    nname = j["node"]
-                    stype = j["sample"]
+        for jfn in jsonfn:
+            with open(jfn) as f:
+                while True:
+                    l = f.readline()
+                    if not l:
+                        break
+                    j = json.loads(l)
+                    if j.has_key("nodeinfo"):
+                        # one info per node, otherwise unknown
+                        self.info[j["nodeinfo"]] = j
+                    elif j.has_key("sample"):
+                        nname = j["node"]
+                        stype = j["sample"]
 
-                    if not self.data.has_key(nname) :
-                        self.data[nname] = {}
-                    if not self.data[nname].has_key(stype) :
-                        self.data[nname][stype] = []
-                    self.data[nname][stype].append(j)
+                        if not self.data.has_key(nname) :
+                            self.data[nname] = {}
+                        if not self.data[nname].has_key(stype) :
+                            self.data[nname][stype] = []
+                        self.data[nname][stype].append(j)
         # double check info's keys and data's keys match
         for k in sorted(self.info.keys()):
             if not self.data.has_key(k):
