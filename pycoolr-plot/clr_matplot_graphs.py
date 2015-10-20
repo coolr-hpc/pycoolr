@@ -117,6 +117,35 @@ class plot_totpwr:
         self.ax.set_ylabel('Power [W]')
 
 
+
+class plot_xsbench:
+    def __init__(self, ax, params, lps):
+        self.ax = ax
+
+        # too lazy to figure out axhspan's object. fix this later
+        self.update(params, lps)
+
+    def update(self, params, lps):
+
+        cfg = params['cfg']
+        cur_t = params['cur']
+        gxsec = params['gxsec']
+
+        self.ax.cla() # this is a brute-force way to update
+
+        # self.ax.axis([cur_t-gxsec, cur_t, 0, ]) # [xmin,xmax,ymin,ymax]
+        self.ax.autoscale(True)
+
+        x = lps.getlistx()
+        y = lps.getlisty()
+        self.ax.plot(x,y, scaley=False, color='black', label='' )
+
+        self.ax.legend(loc='lower left', prop={'size':9})
+        self.ax.set_xlabel('Time [S]')
+        self.ax.set_ylabel('Lookup/s')
+
+
+
 class plot_rapl:
     def __init__(self, ax, params, ppkg, pmem):
         self.ax = ax

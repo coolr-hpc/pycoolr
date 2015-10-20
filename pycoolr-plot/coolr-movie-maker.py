@@ -18,7 +18,7 @@ import numpy as np
 from genframes import *
 from listrotate import *
 
-monitor=False
+monitor=True
 
 import matplotlib
 if not monitor:
@@ -34,7 +34,7 @@ from clr_matplot_graphs import *
 
 # XXX: add these to the option later
 fps = 2
-lrlen = 120  # this is for listrotate. the size of array
+lrlen = 240  # this is for listrotate. the size of array
 gxsec = lrlen * (1.0/fps) # graph x-axis sec
 dpi = 120  # for writer.saving()
 outputfn = 'm.mp4'
@@ -80,6 +80,7 @@ temp_data = frames.getlist(node,'temp')
 freq_data = frames.getlist(node,'freq')
 rapl_data = frames.getlist(node,'energy')
 
+
 # listrotate is used for plotting function in matplotlib
 # CUSTOMIZE when need more details
 temp_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
@@ -89,6 +90,13 @@ raplmem_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 raplpkgpwr_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 raplmempwr_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 rapltotpwr_lr = listrotate2D(length=lrlen)
+
+# ad hoc
+draw_xsbench = False
+if len(sys.argv) == 4:
+    draw_xsbench = True
+    xsbench_data = frames.getlist(node,'xsbench')
+    xsbench_lr = listrotate2D(length=lrlen)
 #
 #
 #
@@ -123,9 +131,17 @@ ax = plt.subplot(row,col,idx)
 pl_rapl = plot_rapl(ax, params, raplpkg_lr, raplmem_lr)
 idx += 1
 #
-ax = plt.subplot(row,col,idx)
-pl_totpwr = plot_totpwr(ax, params, rapltotpwr_lr)
-idx += 1
+draw_totpwr = False
+if draw_totpwr:
+    ax = plt.subplot(row,col,idx)
+    pl_totpwr = plot_totpwr(ax, params, rapltotpwr_lr)
+    idx += 1
+#
+if draw_xsbench :
+    ax = plt.subplot(row,col,idx)
+    pl_xsbench = plot_xsbench(ax, params, xsbench_lr)
+    idx += 1
+
 #
 ax = plt.subplot(row,col,idx)
 pl_info = plot_info(ax, params)
@@ -148,6 +164,14 @@ def draw_frames():
         freqd = freq_data[i]
         rapld = rapl_data[i]
 
+        if draw_xsbench:
+            xsd = xsbench_data[i]
+            if not xsd == None:
+                t = xsd['time'] - ts
+                params['cur'] = t # this is used in update()
+                v = xsd['lps']
+                xsbench_lr.add(t,v)
+                pl_xsbench.update(params, xsbench_lr)
         #
         if not tempd == None:
             for p in range(npkgs):
@@ -195,7 +219,8 @@ def draw_frames():
                 raplmempwr_lr[p].add(t,pwrmem)
                 rapltotpwr_lr.add(t,pwrpkg + pwrmem)
             pl_rapl.update(params, raplpkgpwr_lr, raplmempwr_lr)
-            pl_totpwr.update(params, rapltotpwr_lr)
+            if draw_totpwr:
+                pl_totpwr.update(params, rapltotpwr_lr)
         #
 
         if monitor:
