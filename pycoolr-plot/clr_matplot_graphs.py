@@ -117,7 +117,7 @@ class plot_totpwr:
         self.ax.set_ylabel('Power [W]')
 
 
-
+# the following plots can be generalized
 class plot_xsbench:
     def __init__(self, ax, params, lps):
         self.ax = ax
@@ -133,8 +133,35 @@ class plot_xsbench:
 
         self.ax.cla() # this is a brute-force way to update
 
-        self.ax.axis([cur_t-gxsec, cur_t, 0, 19533901 ]) # [xmin,xmax,ymin,ymax]
-        #self.ax.autoscale(True)
+        self.ax.set_xlim([cur_t-gxsec, cur_t])
+        self.ax.set_ylim(bottom=0)
+
+        x = lps.getlistx()
+        y = lps.getlisty()
+        #self.ax.plot(x,y, scaley=False, color='black', label='' )
+        self.ax.bar(x,y,  color='black', label='' )
+
+        self.ax.legend(loc='lower left', prop={'size':9})
+        self.ax.set_xlabel('Time [S]')
+        self.ax.set_ylabel('TTS [S]')
+
+class plot_graph500:
+    def __init__(self, ax, params, lps):
+        self.ax = ax
+
+        # too lazy to figure out axhspan's object. fix this later
+        self.update(params, lps)
+
+    def update(self, params, lps):
+
+        cfg = params['cfg']
+        cur_t = params['cur']
+        gxsec = params['gxsec']
+
+        self.ax.cla() # this is a brute-force way to update
+
+        self.ax.set_xlim([cur_t-gxsec, cur_t])
+
 
         x = lps.getlistx()
         y = lps.getlisty()
@@ -145,6 +172,30 @@ class plot_xsbench:
         self.ax.set_xlabel('Time [S]')
         self.ax.set_ylabel('TEPS')
 
+class plot_argobots: # mean, std
+    def __init__(self, ax, params, pdata ):
+        self.ax = ax
+        self.update(params, pdata)
+
+    def update(self, params, pdata, ptype = 'temp'):
+        cfg = params['cfg']
+        cur_t = params['cur']
+        gxsec = params['gxsec']
+
+        self.ax.cla()
+        self.ax.set_xlim([cur_t-gxsec, cur_t])
+
+        x = pdata.getlistx()
+        y = pdata.getlisty()
+        e = pdata.getlisto()
+        self.ax.plot(x,y,scaley=False,  label='')
+        self.ax.errorbar(x,y,yerr=e, lw=.2,  label = '')
+
+        # we need to update labels everytime because of cla()
+        self.ax.set_xlabel('Time [S]')
+        self.ax.set_ylabel('')
+#        self.ax.legend(loc='lower left', prop={'size':9})
+# ----------------------
 
 class plot_rapl:
     def __init__(self, ax, params, ppkg, pmem):

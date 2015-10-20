@@ -91,15 +91,20 @@ raplpkgpwr_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 raplmempwr_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 rapltotpwr_lr = listrotate2D(length=lrlen)
 
-# ad hoc
-draw_xsbench = False
-if len(sys.argv) == 4:
-    draw_xsbench = True
-    xsbench_data = frames.getlist(node,'xsbench')
-    xsbench_lr = listrotate2D(length=lrlen)
+
+# XXX: super ad hoc... clean up later
+addon_data = {}
+addon_lr = {}
+if len(sys.argv) >= 4:
+    allsamples=frames.getsamples(node)
+    for k in ('xsbench', 'Graph500', 'argobots'):
+        if k in allsamples:
+            addon_data[k] = frames.getlist(node,k)
+            addon_lr[k] = listrotate2D(length=lrlen)
 #
 #
 #
+
 
 FFMpegWriter = manimation.writers['ffmpeg']
 writer = FFMpegWriter(fps=2, 
@@ -137,9 +142,19 @@ if draw_totpwr:
     pl_totpwr = plot_totpwr(ax, params, rapltotpwr_lr)
     idx += 1
 #
-if draw_xsbench :
+# addon graphs
+# XXX: ad hoc.clean up later
+addon_pl = {}
+for k in addon_data.keys():
     ax = plt.subplot(row,col,idx)
-    pl_xsbench = plot_xsbench(ax, params, xsbench_lr)
+
+    if k == 'xsbench':
+        addon_pl[k] = plot_xsbench(ax, params, addon_lr[k])
+    elif k == 'Graph500':
+        addon_pl[k] = plot_graph500(ax, params, addon_lr[k])
+    elif k == 'argobots':
+        addon_pl[k] = plot_argobots(ax, params, addon_lr[k])
+
     idx += 1
 
 #
@@ -164,14 +179,25 @@ def draw_frames():
         freqd = freq_data[i]
         rapld = rapl_data[i]
 
-        if draw_xsbench:
-            xsd = xsbench_data[i]
-            if not xsd == None:
-                t = xsd['time'] - ts
+        for k in addon_data.keys():
+            d = addon_data[k][i]
+            if not d == None:
+                t = d['time'] - ts
                 params['cur'] = t # this is used in update()
-                v = xsd['lps']
-                xsbench_lr.add(t,v)
-                pl_xsbench.update(params, xsbench_lr)
+                if k == 'xsbench':
+                    v = d['lps']
+                    addon_lr[k].add(t,v)
+                elif k == 'Graph500':
+                    v = d['TEPS']
+                    addon_lr[k].add(t,v)
+                elif k == 'argobots':
+                    tmp = []
+                    for tmpk in d['num_threads'].keys():
+                        tmp.append(int(d['num_threads'][tmpk]))
+
+                    addon_lr[k].add(t,np.mean(tmp),np.std(tmp))
+
+                addon_pl[k].update(params, addon_lr[k])
         #
         if not tempd == None:
             for p in range(npkgs):
