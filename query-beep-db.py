@@ -12,8 +12,8 @@ import json
 nsec = 3
 oldt = time.time() - nsec
 
-if len(sys.argv) > 2:
-    oldt = int(sys.argv[1])
+if len(sys.argv) > 1:
+    oldt = float(sys.argv[1])
 
 con = lite.connect('/dev/shm/node_power.sql')
 
