@@ -15,6 +15,9 @@ import pylab
 from collections import deque
 import matplotlib.cm as cm
 
+#enable_query_db = True
+enable_query_db = False
+
 
 if len(sys.argv) < 2:
     print 'Usage: pycoolr-plot.py config [outputfn]'
@@ -86,6 +89,31 @@ def querydataj(cmd=''):
 
     return ret
 
+# only enable_query_db
+def dbquerydataj(lastt):
+    f = os.popen("%s %s" % (config["dbquerycmd"],lastt), "r")
+    ret = [] # return an array of dict objects
+
+    while True:
+        l = f.readline()
+        if not l:
+            break
+        try:
+            j = json.loads(l)
+        except ValueError, e:
+            break
+        # workaround: beacon uses wrong tag
+        d = {}
+        d["sample"] = "nodepwr"
+        d["time"] = j["time"]
+        d["watts"] = j["watts"]
+        ret.append(d)
+        logf.write(json.dumps(d))
+    f.close()
+
+    return ret
+
+
 
 def queryexternalj(cmd=''):
     f = os.popen("%s %s" % (config["external"],cmd), "r")
@@ -115,6 +143,10 @@ uptimeq = deque(nans)
 
 #
 acpwrq = deque(nans)
+
+if enable_query_db:
+    nodepwrq = deque(nans)
+    lastime_qeury_db = 0
 
 # 
 meanqs  = [ deque(nans) for i in range(0,npkgs) ]
@@ -168,6 +200,7 @@ while True:
     # querying
     #
     profile_st = time.time()
+
     
     sample = querydataj("--sample")
     s_temp = sample[0]
@@ -185,6 +218,15 @@ while True:
     uptimeq.popleft()
     uptimeq.append( rel_t )
     # print uptimeq
+
+    if enable_query_db:
+        dbj = dbquerydataj(lastime_qeury_db)
+        lastime_qeury_db = dbj[-1]["time"]
+        e = dbj[-1]
+        p = e['watts']
+        print p, type(p)
+        nodepwrq.popleft()
+        nodepwrq.append(p) 
 
     totalpower=0.0
 
@@ -297,21 +339,30 @@ while True:
     #
     plt.subplot(2,4,subplotidx)
     subplotidx = subplotidx + 1
-    plt.axis([rel_t - maxpoints*interval, rel_t, config["pwrmin"], config["pwrmax"]]) # [xmin,xmax,ymin,ymax]
-#    plt.axhspan( 115, 120, facecolor='#eeeeee', alpha=0.5)
+    if enable_query_db:
+        plt.axis([rel_t - maxpoints*interval, rel_t, 20, config["acpwrmax"]]) # [xmin,xmax,ymin,ymax]
 
-    l_uptime=list(uptimeq)
-    for pkgid in range(0, npkgs):
-        plt.plot(l_uptime, list(plimqs[pkgid]), scaley=False, color='red' )
-        l_powerqs=list(powerqs[pkgid])
-        plt.plot(l_uptime, l_powerqs, scaley=False, label='PKG%d'%pkgid, color=cnames[pkgid] )
+        l_uptime=list(uptimeq)
+        l_nodepwrq=list(nodepwrq)
+        plt.plot(l_uptime, l_nodepwrq, scaley=False)
 
-        if config["dramrapl"] == "yes": 
-            l_drampowerqs=list(drampowerqs[pkgid])
-            plt.plot(l_uptime, l_drampowerqs, scaley=False, label='DRAM%d'%pkgid, color=cnames[pkgid], ls='-' )
+        plt.xlabel('Uptime [S]')
+        plt.ylabel('Nod RAPL Power [W]')
+    else: # coolrs.py
+        plt.axis([rel_t - maxpoints*interval, rel_t, config["pwrmin"], config["pwrmax"]]) # [xmin,xmax,ymin,ymax]
 
-    plt.xlabel('Uptime [S]')
-    plt.ylabel('RAPL Power [W]')
+        l_uptime=list(uptimeq)
+        for pkgid in range(0, npkgs):
+            plt.plot(l_uptime, list(plimqs[pkgid]), scaley=False, color='red' )
+            l_powerqs=list(powerqs[pkgid])
+            plt.plot(l_uptime, l_powerqs, scaley=False, label='PKG%d'%pkgid, color=cnames[pkgid] )
+
+            if config["dramrapl"] == "yes": 
+                l_drampowerqs=list(drampowerqs[pkgid])
+                plt.plot(l_uptime, l_drampowerqs, scaley=False, label='DRAM%d'%pkgid, color=cnames[pkgid], ls='-' )
+
+        plt.xlabel('Uptime [S]')
+        plt.ylabel('RAPL Power [W]')
 
     #
     #
