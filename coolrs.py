@@ -115,8 +115,9 @@ class coolrmon_tracer:
         self.freq =  clr_cpufreq.cpufreq_reader()
         self.acpi = clr_hwmon.acpi_power_meter_reader()
 
-    def showconfig(self):
-        s  = '{"kernelversion":"%s"' % self.nc.version
+    def shownodeinfo(self):
+        s  = '{"nodeinfo":"%s"' % self.nc.nodename
+        s += ',"kernelversion":"%s"' % self.nc.version
         s += ',"cpumodel":%d' % self.nc.cpumodel
         s += ',"memoryKB":%d' % self.nc.memoryKB
         s += ',"freqdriver":"%s"' % self.nc.freqdriver
@@ -176,7 +177,7 @@ class coolrmon_tracer:
         sys.exit(1)
 
     def run(self, argv):
-        self.showconfig()
+        self.shownodeinfo()
 
         self.start_time0 = time.time()
         s = '{"starttime":%.3f}' % self.start_time0
@@ -276,7 +277,7 @@ if __name__ == '__main__':
             tr.sample_acpi('sample')
             sys.exit(0)
         elif o in ("--info"):
-            tr.showconfig()
+            tr.shownodeinfo()
             sys.exit(0)
         else:
             print 'Unknown:', o, a
