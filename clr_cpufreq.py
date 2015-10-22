@@ -102,7 +102,7 @@ class cpufreq_reader:
             tmp = cpustatvals(cpuid) # just for cpustatfn
             statpath = tmp.cpustatfn(cpuid)
             if not os.path.exists(statpath):
-                print 'Not found', statpath
+                # print 'Not found', statpath
                 return
 
         self.init = True

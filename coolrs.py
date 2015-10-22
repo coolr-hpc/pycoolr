@@ -11,7 +11,7 @@
 # the following kernel modules are optional
 #
 # - acpi_power_meter
-# - amperf
+# - cpustat (coolr-hpc)
 #
 # written by Kazutomo Yoshii <ky@anl.gov>
 #
@@ -55,8 +55,9 @@ class coolrmon_tracer:
 
     def sample_freq(self,label):
         #s = self.amp.sample_and_json()
-        s = self.freq.sample_and_json(node=self.nc.nodename)
-        self.logger(s)
+        if self.freq.init:
+            s = self.freq.sample_and_json(node=self.nc.nodename)
+            self.logger(s)
 
     def sample_temp(self,label):
         s = self.ctr.sample_and_json(node=self.nc.nodename)
@@ -107,13 +108,22 @@ class coolrmon_tracer:
         self.intervalsec = 1
         self.logger = self.defaultlogger
         # instantiate class
-        self.ctr = clr_hwmon.coretemp_reader()
-        self.rapl = clr_rapl.rapl_reader()
         self.nc = clr_nodeinfo.nodeconfig()
         self.ct = clr_nodeinfo.cputopology()
+
+        self.samples = []
+        self.ctr = clr_hwmon.coretemp_reader()
+        self.samples.append("temp") # XXX: fix coretemp_reader.init
+        self.rapl = clr_rapl.rapl_reader()
+        if self.rapl.init:
+            self.samples.append("energy")
         #self.amp = clr_amperf.amperf_reader()
         self.freq =  clr_cpufreq.cpufreq_reader()
+        if self.freq.init:
+            self.samples.append("freq")
         self.acpi = clr_hwmon.acpi_power_meter_reader()
+        if self.acpi.init:
+            self.samples.append("acpi")
 
     def shownodeinfo(self):
         s  = '{"nodeinfo":"%s"' % self.nc.nodename
@@ -121,7 +131,8 @@ class coolrmon_tracer:
         s += ',"cpumodel":%d' % self.nc.cpumodel
         s += ',"memoryKB":%d' % self.nc.memoryKB
         s += ',"freqdriver":"%s"' % self.nc.freqdriver
-
+        s += ',"samples":[%s]' % \
+             ','.join(map((lambda s:'"%s"'%s), self.samples))
         ncpus = len(self.ct.onlinecpus)
         s += ',"ncpus":%d' % ncpus
         npkgs = len(self.ct.pkgcpus.keys())
