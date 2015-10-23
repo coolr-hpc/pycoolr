@@ -15,8 +15,8 @@ import pylab
 from collections import deque
 import matplotlib.cm as cm
 
-#enable_query_db = True
-enable_query_db = False
+enable_query_db = True
+#enable_query_db = False
 
 
 if len(sys.argv) < 2:
@@ -108,7 +108,7 @@ def dbquerydataj(lastt):
         d["time"] = j["time"]
         d["watts"] = j["watts"]
         ret.append(d)
-        logf.write(json.dumps(d))
+        logf.write(json.dumps(d) + "\n")
     f.close()
 
     return ret
