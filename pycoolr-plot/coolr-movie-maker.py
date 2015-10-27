@@ -34,7 +34,7 @@ from clr_matplot_graphs import *
 
 # XXX: add these to the option later
 fps = 2
-lrlen = 240  # this is for listrotate. the size of array
+lrlen = 100  # this is for listrotate. the size of array
 gxsec = lrlen * (1.0/fps) # graph x-axis sec
 dpi = 120  # for writer.saving()
 outputfn = 'm.mp4'
@@ -67,7 +67,7 @@ print frames.data.keys()
 #
 # 
 frames.setfps(fps)
-nframes = frames.nframes  # % 60 # just for debugging
+nframes = frames.nframes  # % 60 # for a quick debugging
 ts = frames.ts  # the start time
 
 #
@@ -235,6 +235,7 @@ def draw_frames():
 
         #
         if not rapld == None:
+            totalpwr = 0.0
             for p in range(npkgs):
                 t = rapld['time'] - ts
                 params['cur'] = t
@@ -261,12 +262,13 @@ def draw_frames():
                 vc = rapld['powercap']['p%d' % p]
                 raplpkgpwr_lr[p].add(t,pwrpkg, vc)
                 raplmempwr_lr[p].add(t,pwrmem)
+                totalpwr += pwrpkg + pwrmem
 
             pl_rapl.update(params, raplpkgpwr_lr, raplmempwr_lr)
 
             if draw_totpwr:
                 if rapld:
-                    totpwr_lr[0].add(t, rapld["power"]["total"])
+                    totpwr_lr[0].add(t, totalpwr)
                 if found_acpi and acpid:
                     totpwr_lr[1].add(t, acpid["power"])
 
