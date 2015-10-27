@@ -12,13 +12,17 @@
 # Kazutomo Yoshii <ky@anl.gov>
 # 
 
+monitor=False
+draw_totpwr=False
+
+#
+
 import time, sys, os
 import numpy as np
 
 from genframes import *
 from listrotate import *
 
-monitor=False
 
 import matplotlib
 if not monitor:
@@ -27,10 +31,6 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
 matplotlib.rcParams.update({'font.size': 12})
 from clr_matplot_graphs import *
-
-
-#
-#
 
 # XXX: add these to the option later
 fps = 2
@@ -51,12 +51,18 @@ print 'Data: ', ' '.join(sys.argv[2:])
     
 with open(sys.argv[1]) as f:
     cfg = json.load(f)
+
+# load json data from files argv[2:]
 frames = genframes(sys.argv[2:])
+
 # XXX: single node target now
 node = frames.getnodes()[0]
 info = frames.info[node]
 npkgs = info['npkgs']
 ncpus = info['ncpus']
+
+# process json data
+print frames.data.keys()
 
 #
 # 

@@ -15,8 +15,8 @@ import pylab
 from collections import deque
 import matplotlib.cm as cm
 
-enable_query_db = True
-#enable_query_db = False
+#enable_query_db = True
+enable_query_db = False
 
 
 if len(sys.argv) < 2:
