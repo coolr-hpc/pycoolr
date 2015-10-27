@@ -12,13 +12,17 @@
 # Kazutomo Yoshii <ky@anl.gov>
 # 
 
+monitor=False
+draw_totpwr=False
+
+#
+
 import time, sys, os
 import numpy as np
 
 from genframes import *
 from listrotate import *
 
-monitor=False
 
 import matplotlib
 if not monitor:
@@ -28,13 +32,9 @@ import matplotlib.animation as manimation
 matplotlib.rcParams.update({'font.size': 12})
 from clr_matplot_graphs import *
 
-
-#
-#
-
 # XXX: add these to the option later
 fps = 2
-lrlen = 240  # this is for listrotate. the size of array
+lrlen = 100  # this is for listrotate. the size of array
 gxsec = lrlen * (1.0/fps) # graph x-axis sec
 dpi = 120  # for writer.saving()
 outputfn = 'm.mp4'
@@ -51,17 +51,23 @@ print 'Data: ', ' '.join(sys.argv[2:])
     
 with open(sys.argv[1]) as f:
     cfg = json.load(f)
+
+# load json data from files argv[2:]
 frames = genframes(sys.argv[2:])
+
 # XXX: single node target now
 node = frames.getnodes()[0]
 info = frames.info[node]
 npkgs = info['npkgs']
 ncpus = info['ncpus']
 
+# process json data
+print frames.data.keys()
+
 #
 # 
 frames.setfps(fps)
-nframes = frames.nframes # % 60 # just for debugging
+nframes = frames.nframes  # % 60 # for a quick debugging
 ts = frames.ts  # the start time
 
 #
@@ -80,6 +86,10 @@ temp_data = frames.getlist(node,'temp')
 freq_data = frames.getlist(node,'freq')
 rapl_data = frames.getlist(node,'energy')
 
+found_acpi=False
+if 'acpi' in frames.getsamples(node):
+    acpi_data = frames.getlist(node,'acpi')
+    found_acpi=True
 
 # listrotate is used for plotting function in matplotlib
 # CUSTOMIZE when need more details
@@ -89,8 +99,12 @@ raplpkg_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 raplmem_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 raplpkgpwr_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 raplmempwr_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
-rapltotpwr_lr = listrotate2D(length=lrlen)
 
+if draw_totpwr:
+    n=1
+    if found_acpi:
+        n+=1
+    totpwr_lr = [listrotate2D(length=lrlen) for i in range(n)]
 
 # XXX: super ad hoc... clean up later
 addon_data = {}
@@ -136,10 +150,10 @@ ax = plt.subplot(row,col,idx)
 pl_rapl = plot_rapl(ax, params, raplpkg_lr, raplmem_lr)
 idx += 1
 #
-draw_totpwr = False
+
 if draw_totpwr:
     ax = plt.subplot(row,col,idx)
-    pl_totpwr = plot_totpwr(ax, params, rapltotpwr_lr)
+    pl_totpwr = plot_totpwr(ax, params, totpwr_lr)
     idx += 1
 #
 # addon graphs
@@ -178,6 +192,8 @@ def draw_frames():
         tempd = temp_data[i]
         freqd = freq_data[i]
         rapld = rapl_data[i]
+        if found_acpi:
+            acpid = acpi_data[i]
 
         for k in addon_data.keys():
             d = addon_data[k][i]
@@ -216,8 +232,10 @@ def draw_frames():
                 v1 = freqd['p%d' % p]['std']
                 freq_lr[p].add(t,v0,v1)
             pl_freq.update(params, freq_lr, ptype = 'freq')
+
         #
         if not rapld == None:
+            totalpwr = 0.0
             for p in range(npkgs):
                 t = rapld['time'] - ts
                 params['cur'] = t
@@ -240,14 +258,29 @@ def draw_frames():
                 if pwrmem < 0.0:
                     pwrmem += params["info"]["max_energy_uj"]["p%d" % pkgid]
                 pwrmem *= 1e-6
+
                 vc = rapld['powercap']['p%d' % p]
                 raplpkgpwr_lr[p].add(t,pwrpkg, vc)
                 raplmempwr_lr[p].add(t,pwrmem)
-                rapltotpwr_lr.add(t,pwrpkg + pwrmem)
+                totalpwr += pwrpkg + pwrmem
+
             pl_rapl.update(params, raplpkgpwr_lr, raplmempwr_lr)
+
             if draw_totpwr:
-                pl_totpwr.update(params, rapltotpwr_lr)
+                if rapld:
+                    totpwr_lr[0].add(t, totalpwr)
+                if found_acpi and acpid:
+                    totpwr_lr[1].add(t, acpid["power"])
+
+                pl_totpwr.update(params, totpwr_lr )
         #
+        # force to scroll
+        cur_t = params['cur']
+        gxsec = params['gxsec']
+        pl_temp.ax.set_xlim([cur_t-gxsec, cur_t])
+        pl_freq.ax.set_xlim([cur_t-gxsec, cur_t])
+        pl_rapl.ax.set_xlim([cur_t-gxsec, cur_t])
+
 
         if monitor:
             plt.draw()

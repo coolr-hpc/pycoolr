@@ -92,13 +92,11 @@ class plot_info:
 
 
 class plot_totpwr:
-    def __init__(self, ax, params, rapltotpwr):
+    def __init__(self, ax, params, totpwrs):
         self.ax = ax
+        self.update(params, totpwrs)
 
-        # too lazy to figure out axhspan's object. fix this later
-        self.update(params, rapltotpwr)
-
-    def update(self, params, rapltotpwr):
+    def update(self, params, totpwrs):
 
         cfg = params['cfg']
         cur_t = params['cur']
@@ -108,9 +106,13 @@ class plot_totpwr:
 
         self.ax.axis([cur_t-gxsec, cur_t, cfg['pwrmin'], cfg['acpwrmax']]) # [xmin,xmax,ymin,ymax]
 
-        x = rapltotpwr.getlistx()
-        y = rapltotpwr.getlisty()
+        x = totpwrs[0].getlistx()
+        y = totpwrs[0].getlisty()
         self.ax.plot(x,y, scaley=False, color='black', label='RAPL total' )
+        if len(totpwrs) > 1:
+            x = totpwrs[1].getlistx()
+            y = totpwrs[1].getlisty()
+            self.ax.plot(x,y, '--', scaley=False,  color='black', label='AC' )
 
         self.ax.legend(loc='lower left', prop={'size':9})
         self.ax.set_xlabel('Time [S]')
@@ -173,7 +175,7 @@ class plot_graph500:
         self.ax.set_ylabel('TEPS')
 
 class plot_argobots: # mean, std
-    def __init__(self, ax, params, pdata ):
+    def __init__(self, ax, params, pdata):
         self.ax = ax
         self.update(params, pdata)
 
