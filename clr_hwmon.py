@@ -205,8 +205,6 @@ if __name__ == '__main__':
     if acpipwr.initialized():
         print acpipwr.sample_and_json('testnode')
 
-    sys.exit(1)
-
     ctr = coretemp_reader()
 
     temp = ctr.readtempall()
