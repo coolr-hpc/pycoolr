@@ -7,16 +7,21 @@ import zlib,base64
 import getopt
 
 outputfn = 'multinodes.json'
+nodes = ''
+
 
 def usage():
     print ''
     print 'Usage: coolr-live-multi.py [options] config'
     print ''
-
-
+    print '[options]'
+    print ''
+    print '--outputfn fn: specify output fiflename (default:%s)' % outputfn
+    print '--nodes nodes: list of the nodes. comma separated (default:allnodes)'
+    print ''
 
 shortopt = "h"
-longopt = ['output=']
+longopt = ['output=','nodes=']
 try:
     opts, args = getopt.getopt(sys.argv[1:],
                                shortopt, longopt)
@@ -75,17 +80,32 @@ def querydataj(cmd='', decompress=False):
 lastdbid=0
 cmd=cfg['dbquerycmd']
 
+npkg=2 # hardcode for now
+
+allnodes={}  # power data for now
+
 while True:
     t1=time.time()
     if lastdbid > 0:
         j = querydataj("%s --gtidx=%d" % (cmd, lastdbid))
     else:
         j = querydataj(cmd)
-    t2=time.time()
-    print 'time=', t2-t1
 
     for e in j:
-        print e
+        # print e
+        if j.has_key('node'):
+            node = j['node']
+            if allnodes.has_key(node):
+                # total, pkg, dram, limit
+                allnodes[node]['total']=j['power']['total']
+                for pkgid in range(npkg):
+                    allnodes[node]['total']=j['power']['total']
+                    
+
+
+    t2=time.time()
+    print 'time on data ack:', t2-t1
+
 
     if len(j) > 0:
         lastdbid = int(j[-1]['dbid'])
