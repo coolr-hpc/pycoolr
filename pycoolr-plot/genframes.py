@@ -3,6 +3,8 @@
 #
 # Reconstructing graph from recorded data by "realtime plot"
 #
+# Currently genframes only works with offline data
+#
 # Kazutomo Yoshii <ky@anl.gov>
 # 
 
