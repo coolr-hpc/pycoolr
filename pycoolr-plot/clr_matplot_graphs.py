@@ -200,9 +200,9 @@ class plot_argobots: # mean, std
 # ----------------------
 
 class plot_rapl:
-    def __init__(self, ax, params, ppkg, pmem):
+    def __init__(self, ax, params, ppkg, pmem, nodename=''):
         self.ax = ax
-
+        self.nodename = nodename
         # too lazy to figure out axhspan's object. fix this later
         self.update(params, ppkg, pmem)
 
@@ -241,6 +241,8 @@ class plot_rapl:
         self.ax.legend(loc='lower left', prop={'size':9})
         self.ax.set_xlabel('Time [S]')
         self.ax.set_ylabel('Power [W]')
+        if len(self.nodename):
+            self.ax.set_title("Node: %s" % self.nodename)
 
 
 

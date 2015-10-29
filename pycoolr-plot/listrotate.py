@@ -67,7 +67,10 @@ class listrotate2D:
         ym1 = self.y[self.pos-1]
         ym2 = self.y[self.pos-2]
         if not np.nan in (xm1, xm2, ym1, ym2):
-            self.r[self.pos-1] = (ym1-ym2)/(xm1-xm2)
+            if (xm1-xm2)==0.0:
+                self.r[self.pos-1] = 0.0
+            else:
+                self.r[self.pos-1] = (ym1-ym2)/(xm1-xm2)
 
     def getlastx(self):
         return self.x[self.pos-1]
