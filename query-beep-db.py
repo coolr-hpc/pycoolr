@@ -17,6 +17,7 @@ dbfile = '/dev/shm/node_power.sql'
 gtidx=-1
 compress=False
 last=-1
+stat=False
 
 def usage():
     print ''
@@ -32,7 +33,7 @@ def usage():
     print
 
 shortopt = "h"
-longopt = ['dbfile=', 'secago=', 'gtidx=', 'last=', 'compress']
+longopt = ['dbfile=', 'secago=', 'gtidx=', 'last=', 'compress', 'stat']
 try:
     opts, args = getopt.getopt(sys.argv[1:],
                                shortopt, longopt)
@@ -55,6 +56,8 @@ for o, a in opts:
         compress=True
     elif o in ("--last"):
         last=int(a)
+    elif o in ("--stat"):
+        stat=True
 
 oldt = time.time() - secago
 
@@ -73,16 +76,29 @@ with con:
     rows = cur.fetchall()
 
     buf = ''
+    t1=0
+    t2=0
+    nrecs=0
     for row in rows:
         j = json.loads(row[2])
         # add dbid so that the acquisition side can keep track
         j['dbid'] = int(row[0])
         buf += json.dumps(j)
         buf += '\n'
+        if t1 == 0:
+            t1 = float(row[1])
+        else:
+            t2 = float(row[1])
+        nrecs += 1
+
     if compress:
         print base64.b64encode(zlib.compress(buf,9))
     else:
-        print buf
+        print buf,
+
+    if stat:
+        if nrecs > 1:
+            print "{'sample':'query-beep-db', 'rps':%.2lf}" % (float(nrecs)/(t2-t1))
 
 #   print len(buf)
 
