@@ -80,16 +80,19 @@ with con:
     t2=0
     nrecs=0
     for row in rows:
-        j = json.loads(row[2])
-        # add dbid so that the acquisition side can keep track
-        j['dbid'] = int(row[0])
-        buf += json.dumps(j)
-        buf += '\n'
-        if t1 == 0:
-            t1 = float(row[1])
-        else:
-            t2 = float(row[1])
-        nrecs += 1
+        try:
+            j = json.loads(row[2])
+            # add dbid so that the acquisition side can keep track
+            j['dbid'] = int(row[0])
+            buf += json.dumps(j)
+            buf += '\n'
+            if t1 == 0:
+                t1 = float(row[1])
+            else:
+                t2 = float(row[1])
+            nrecs += 1
+        except:
+            print >> sys.stderr, 'json error:', row[2]
 
     if compress:
         print base64.b64encode(zlib.compress(buf,9))
