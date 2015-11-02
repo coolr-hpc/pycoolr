@@ -95,6 +95,9 @@ class coolrmon_tracer:
     def setinterval(self,isec):
         self.intervalsec = isec 
 
+    def setbeacon(self):
+        self.beacon = True
+
     def setlogger(self,func):
         self.logger = func
 
@@ -106,6 +109,8 @@ class coolrmon_tracer:
         self.cooldowntemp = 45  # depend on arch
         #self.output = sys.stdout
         self.intervalsec = 1
+        #XXX: demo
+        self.beacon = False
         self.logger = self.defaultlogger
         # instantiate class
         self.nc = clr_nodeinfo.nodeconfig()
@@ -253,11 +258,25 @@ class log2file:
     def logger(self,str):
         self.f.write(str + '\n')
 
+# XXX: tentative
+class log2beacon:
+    def __init__(self, cmd, topic):
+        self.cmd = cmd
+        self.topic = topic
+
+    def logger(self,str):
+        c = [self.cmd, self.topic, "%s" % str]
+        try:
+            subprocess.call(c)
+        except:
+            print 'Error: failed to publish:', c
+            sys.exit(1)
+        print c
 
 if __name__ == '__main__':
 
     shortopt = "hC:i:o:"
-    longopt = ['runtests', 'cooldown=', 'interval=', 'output=', 'sample', 'info' ]
+    longopt = ['runtests', 'cooldown=', 'interval=', 'output=', 'sample', 'info', 'output2beacon=' ]
     try:
         opts, args = getopt.getopt(sys.argv[1:], 
                                    shortopt, longopt)
@@ -281,6 +300,14 @@ if __name__ == '__main__':
         elif o in ("-o", "--output"):
             l = log2file(a)
             tr.setlogger(l.logger)
+        elif o in ("--output2beacon"):
+            cmd, topic = a.split(':')
+            if len(topic) == 0:
+                print 'Specify topic after :'
+                sys.exit(1)
+            l = log2beacon(cmd, topic)
+            tr.setlogger(l.logger)
+            tr.setbeacon()
         elif o in ("--sample"):
             tr.sample_temp('sample')
             tr.sample_energy('sample')
@@ -295,7 +322,13 @@ if __name__ == '__main__':
             sys.exit(1)
     #
     #
-
-    tr.run(args)
+    # XXX: beacon is ad hoc impl for the demo
+    if tr.beacon:
+        while True:
+            tr.sample_temp('run')
+            tr.sample_freq('run')
+            time.sleep(tr.intervalsec)
+    else:
+        tr.run(args)
 
     sys.exit(0)
