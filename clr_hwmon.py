@@ -47,6 +47,7 @@ class coretemp_reader :
             self.pkgtempfn = ''
 
     def __init__ (self):
+        self.outputpercore(True)
 
         self.coretemp = {} # use pkgid as  key
         for d1 in os.listdir(self.hwmondir):
@@ -100,6 +101,9 @@ class coretemp_reader :
             ret[pkgid] = temps
         return ret
 
+    def outputpercore(self,flag=True):
+        self.percore=flag
+
     def sample_and_json(self,node = ""):
         temp = self.readtempall()
         # constructing a json output
@@ -116,9 +120,10 @@ class coretemp_reader :
             s += ',"std":%.2lf ' % pstat[1]
             s += ',"min":%.2lf ' % pstat[2]
             s += ',"max":%.2lf ' % pstat[3]
-            
-            for c in sorted(temp[p].keys()):
-                s += ',"%s":%d' % (c, temp[p][c])
+
+            if self.percore:
+                for c in sorted(temp[p].keys()):
+                    s += ',"%s":%d' % (c, temp[p][c])
             s += '}'
         s += '}'
 
@@ -206,6 +211,7 @@ if __name__ == '__main__':
         print acpipwr.sample_and_json('testnode')
 
     ctr = coretemp_reader()
+    ctr.outputpercore(False)
 
     temp = ctr.readtempall()
 

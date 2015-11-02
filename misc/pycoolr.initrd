@@ -45,8 +45,8 @@ SCRIPTNAME=/etc/init.d/$NAME
 #
 do_start()
 {
-    # 
-    /nfs/pycoolr/misc/coolr_node_sampling --output2beacon=/nfs/beacon_inst/bin/arbitrary_pub:NODE_POWER &
+    /nfs/pycoolr/coolrs.py --output2beacon=/nfs/beacon_inst/bin/arbitrary_pub:NODE_POWER > /tmp/coolrs.py.log 2>&1 &
+    return 0
 }
 
 #
@@ -54,6 +54,7 @@ do_start()
 #
 do_stop()
 {
+    return 0
 }
 
 #

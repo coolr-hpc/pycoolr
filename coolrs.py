@@ -35,6 +35,11 @@ from clr_misc import *
 #
 #
 
+debuglevel=0
+
+#
+#
+
 import getopt
 
 def usage():
@@ -97,6 +102,8 @@ class coolrmon_tracer:
 
     def setbeacon(self):
         self.beacon = True
+        self.ctr.outputpercore(False)
+        self.freq.outputpercore(False)
 
     def setlogger(self,func):
         self.logger = func
@@ -271,12 +278,13 @@ class log2beacon:
         except:
             print 'Error: failed to publish:', c
             sys.exit(1)
-        print c
+        if debuglevel > 0:
+            print 'Debug:', c
 
 if __name__ == '__main__':
 
     shortopt = "hC:i:o:"
-    longopt = ['runtests', 'cooldown=', 'interval=', 'output=', 'sample', 'info', 'output2beacon=' ]
+    longopt = ['runtests', 'cooldown=', 'interval=', 'output=', 'sample', 'info', 'output2beacon=', 'debug=' ]
     try:
         opts, args = getopt.getopt(sys.argv[1:], 
                                    shortopt, longopt)
@@ -293,6 +301,8 @@ if __name__ == '__main__':
         if o in ('-h'):
             usage()
             sys.exit(0)
+        elif o in ("--debug"):
+            debuglevel=int(a)
         elif o in ("-C", "--cooldown"):
             tr.setcooldowntemp(int(a))
         elif o in ("-i", "--interval"):

@@ -90,6 +90,8 @@ class cpustatvals:
 class cpufreq_reader:
 
     def __init__(self):
+        self.outputpercore(True)
+
         # I don't know how to create an object in a singleton manner in python
         # so simply instantiating an object of cputopology again here.
         self.ct = clr_nodeinfo.cputopology()
@@ -176,6 +178,9 @@ class cpufreq_reader:
 
         return ret
 
+    def outputpercore(self,flag=True):
+        self.percore=flag
+
     def sample_and_json(self, node=""):
         if not self.init:
             return ''
@@ -193,8 +198,9 @@ class cpufreq_reader:
 
             buf += ',"p%s":{' % p
             buf += '"mean":%.3lf,"std":%.3lf' % (freqmean,freqstd)
-            for c in self.ct.pkgcpus[p]:
-                buf += ',"c%d":%.3lf' % (c, f[c])
+            if self.percore:
+                for c in self.ct.pkgcpus[p]:
+                    buf += ',"c%d":%.3lf' % (c, f[c])
             buf += '}'
         buf += '}'
         return buf
@@ -207,6 +213,8 @@ if __name__ == '__main__':
     if not freq.init:
         print 'Please check the cpustat module is installed'
         sys.exit(1)
+
+    freq.outputpercore(False)
 
     for i in range(0, 20):
         j = freq.sample_and_json()
