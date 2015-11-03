@@ -8,22 +8,28 @@ import getopt
 from listrotate import *
 from clr_utils import *
 
-configfn='chameleon-argo-demo.cfg'
-outputfn = 'multinodes.json'
-nodes = []
+cfgfn='chameleon-argo-demo.cfg'
+appcfgfn='chameleon-app.cfg'
+outputfn='multinodes.json'
+targetnode=''
+enclave=''
 
 def usage():
     print ''
-    print 'Usage: coolr-live-multi.py [options] [config]'
+    print 'Usage: %s [options]' % sys.argv[0]
     print ''
     print '[options]'
     print ''
-    print '--outputfn fn: specify output fiflename (default:%s)' % outputfn
-    print '--nodes nodes: list of the nodes. comma separated (default:allnodes)'
+    print '--cfg fn : the main configuration (default: %s)' % cfgfn
+    print '--outputfn fn : specify output fiflename (default: %s)' % outputfn
+    print ''
+    print '--enclave name : enclave node name'
+    print '--node  name : target node the node power, temp, freq and app graphs'
+    print '--appcfg fn : additional configuration for app graphs'
     print ''
 
 shortopt = "h"
-longopt = ['output=','nodes=']
+longopt = ['output=','node=', 'cfg=', 'appcfg=', 'enclave=' ]
 try:
     opts, args = getopt.getopt(sys.argv[1:],
                                shortopt, longopt)
@@ -38,20 +44,31 @@ for o, a in opts:
         sys.exit(0)
     elif o in ("--output"):
         outputfn=a
-    elif o in ("--nodes"):
-        nodes=a.split(',')
+    elif o in ("--node"):
+        targetnode=a
+    elif o in ("--cfg"):
+        cfgfn=a
+    elif o in ("--appcfg"):
+        appcfgfn=a
+    elif o in ("--enclave"):
+        enclave=a
 
-if len(args) > 0:
-    configfn=args[0]
 
-with open(configfn) as f:
+with open(cfgfn) as f:
     cfg = json.load(f)
 
+if len(targetnode) == 0 :
+    targetnode = cfg['masternode']
+    print 'Use %s as target node' % targetnode
 
 
+if len(appcfgfn) > 0:
+    with open(appcfgfn) as f:
+        appcfg = json.load(f)
 
+    for k in appcfg.keys():
+        cfg[k] = appcfg[k]
 
-nodes.append(cfg['masternode'])
 
 try:
     logf = open(outputfn, 'w', 0) # unbuffered write
@@ -67,17 +84,22 @@ gxsec = lrlen * (1.0/fps) # graph x-axis sec
 
 npkgs=2 # hardcode for now
 
-allnodes={}  # power data for now
+#
+# instantiate data list
+#
+# CUSTOM
 
-for n in nodes:
-    allnodes[n] = {}
-#    allnodes[n]['total'] = listrotate2D(length=lrlen)
-    allnodes[n]['pkg'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
-    allnodes[n]['dram'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
+enclave_lr = {}
+enclave_lr['pkg'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
+enclave_lr['dram'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
+
+node_lr = {}
+node_lr['pkg'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
+node_lr['dram'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
 
 
 #
-#
+# matplot related modules
 #
 import matplotlib
 import matplotlib.pyplot as plt
@@ -101,13 +123,15 @@ col = 2
 row = 2
 idx = 1
 #
-pl_rapl = {}
-for n in nodes:
-    ax = plt.subplot(row,col,idx)
-    # XXX: may cause runtime error
-    pl_rapl[n] = plot_rapl(ax, params, allnodes[n]['pkg'], allnodes[n]['dram'], nodename=n)
-    idx += 1
+# CUSTOM
+#
+ax = plt.subplot(row, col, idx)
+pl_enclave_rapl = plot_rapl(ax, params, enclave_lr['pkg'], enclave_lr['dram'], titlestr='Enclave')
+idx += 1
 
+ax = plt.subplot(row, col, idx)
+pl_node_rapl = plot_rapl(ax, params, node_lr['pkg'], node_lr['dram'], titlestr="%s" % targetnode)
+idx += 1
 
 ts = 0
 
@@ -121,15 +145,11 @@ while True:
     t2=time.time()
     for e in j:
         # print e
-        if e.has_key('node'):
-            if e['sample'] != 'energy':
-                print 'skip:', e['sample']
-                continue
-            node = e['node']
+        if not e.has_key('node'):
+            continue
 
-            if not node in nodes:
-                continue
-
+        # ENCLAVE Power 
+        if e['node'] == 'master' and e['sample'] == 'energy':
             if ts == 0:
                 ts = e['time']
                 t = 0
@@ -139,12 +159,22 @@ while True:
             params['cur'] = t # this is used in update()
 
             for pkgid in range(npkgs):
-                allnodes[node]['pkg'][pkgid].add(t, e['power']['p%d'%pkgid],\
-                                                     e['powercap']['p%d'%pkgid])
-                allnodes[node]['dram'][pkgid].add(t, e['power']['p%d/dram'%pkgid])
-            pl_rapl[node].update(params, allnodes[node]['pkg'], \
-                                  allnodes[node]['dram'])
-
+                tmppow = e['power']['p%d'%pkgid]
+                tmplim = e['powercap']['p%d'%pkgid]
+                tmppowdram =  e['power']['p%d/dram'%pkgid] * 0.25
+                enclave_lr['pkg'][pkgid].add(t, tmppow, tmplim)
+                enclave_lr['dram'][pkgid].add(t, tmppowdram)
+            pl_enclave_rapl.update(params, enclave_lr['pkg'], enclave_lr['dram'])
+        #
+        # NODE Power
+        elif e['node'] == targetnode and e['sample'] == 'energy':
+            for pkgid in range(npkgs):
+                tmppow = e['power']['p%d'%pkgid]
+                tmplim = e['powercap']['p%d'%pkgid]
+                tmppowdram =  e['power']['p%d/dram'%pkgid] * 0.25
+                node_lr['pkg'][pkgid].add(t, tmppow, tmplim)
+                node_lr['dram'][pkgid].add(t, tmppowdram)
+            pl_node_rapl.update(params, enclave_lr['pkg'], enclave_lr['dram'])
 
     plt.draw()
 
@@ -157,7 +187,6 @@ while True:
     t4=time.time()
 
     print 'Profile time: %.2lf %.2lf %.2lf %.2lf' % (t4-t1,  t2-t1, t3-t2, t4-t3)
-
 
 sys.exit(0)
 

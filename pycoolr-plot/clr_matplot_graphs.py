@@ -163,7 +163,7 @@ class plot_graph500:
         self.ax.cla() # this is a brute-force way to update
 
         self.ax.set_xlim([cur_t-gxsec, cur_t])
-
+        #self.ax.set_ylim(bottom=0)
 
         x = lps.getlistx()
         y = lps.getlisty()
@@ -200,9 +200,9 @@ class plot_argobots: # mean, std
 # ----------------------
 
 class plot_rapl:
-    def __init__(self, ax, params, ppkg, pmem, nodename=''):
+    def __init__(self, ax, params, ppkg, pmem, titlestr=''):
         self.ax = ax
-        self.nodename = nodename
+        self.titlestr = titlestr
         # too lazy to figure out axhspan's object. fix this later
         self.update(params, ppkg, pmem)
 
@@ -214,7 +214,10 @@ class plot_rapl:
 
         self.ax.cla() # this is a brute-force way to update
 
-        self.ax.axis([cur_t-gxsec, cur_t, cfg['pwrmin'], cfg['pwrmax']]) # [xmin,xmax,ymin,ymax]
+        self.ax.set_xlim([cur_t-gxsec, cur_t])
+        self.ax.autoscale_view(scaley=True)
+
+        #self.ax.axis([cur_t-gxsec, cur_t, cfg['pwrmin'], cfg['pwrmax']]) # [xmin,xmax,ymin,ymax]
 
         pkgid = 0
         for t in ppkg:
@@ -235,14 +238,14 @@ class plot_rapl:
         for t in pmem:
             x = t.getlistx()
             y = t.getlisty()
-            self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], label='PKG%ddram'%pkgid)
+            self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], linestyle='--', label='PKG%ddram'%pkgid)
             pkgid += 1
 
         self.ax.legend(loc='lower left', prop={'size':9})
         self.ax.set_xlabel('Time [S]')
         self.ax.set_ylabel('Power [W]')
-        if len(self.nodename):
-            self.ax.set_title("Node: %s" % self.nodename)
+        if len(self.titlestr):
+            self.ax.set_title("%s" % self.titlestr)
 
 
 
