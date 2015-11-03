@@ -19,6 +19,16 @@ compress=False
 last=-1
 stat=False
 
+def createtable(dbfile):
+
+    import sqlite3
+
+    con = sqlite3.connect(dbfile)
+    with con:
+        cur = con.cursor()
+        cur.execute("CREATE TABLE Data(Id INTEGER PRIMARY KEY, Time REAL, Json TEXT)")
+
+
 def usage():
     print ''
     print 'Usage: query-beep-db.py [options]'
@@ -30,10 +40,12 @@ def usage():
     print '--gtidx=N : retrieve data whose idx is greather than N (no default)'
     print '--last=N : retrieve last N data (no default)   higher priority than --gtidx'
     print '--compress : data compressed by zlib and print base64 encoded string'
+    print ''
+    print '--create : create required table and exit'
     print
 
 shortopt = "h"
-longopt = ['dbfile=', 'secago=', 'gtidx=', 'last=', 'compress', 'stat']
+longopt = ['dbfile=', 'secago=', 'gtidx=', 'last=', 'compress', 'stat', 'create']
 try:
     opts, args = getopt.getopt(sys.argv[1:],
                                shortopt, longopt)
@@ -58,6 +70,9 @@ for o, a in opts:
         last=int(a)
     elif o in ("--stat"):
         stat=True
+    elif o in ("--create"):
+        createtable(dbfile)
+        sys.exit(0)
 
 oldt = time.time() - secago
 
