@@ -277,7 +277,7 @@ class log2beacon:
             subprocess.call(c)
         except:
             print 'Error: failed to publish:', c
-            sys.exit(1)
+            time.sleep(5)
         if debuglevel > 0:
             print 'Debug:', c
 

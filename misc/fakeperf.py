@@ -5,6 +5,8 @@ import numpy as np
 import subprocess
 import random as r
 
+debuglevel = 1
+
 # XXX: tentative
 class log2beacon:
     def __init__(self, cmd, topic):
@@ -51,7 +53,7 @@ if __name__ == '__main__':
 
     while True:
         l.logger( gen_appperf_json() )
-    #    l.logger( gen_argobots_json() )
+        l.logger( gen_argobots_json() )
 
         time.sleep(1)
 
