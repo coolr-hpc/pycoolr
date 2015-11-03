@@ -93,10 +93,15 @@ enclave_lr = {}
 enclave_lr['pkg'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
 enclave_lr['dram'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
 
-node_lr = {}
-node_lr['pkg'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
-node_lr['dram'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
+rapl_lr = {}
+rapl_lr['pkg'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
+rapl_lr['dram'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
 
+temp_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
+freq_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
+
+runtime_lr = listrotate2D(length=lrlen)
+appperf_lr = listrotate2D(length=lrlen)
 
 #
 # matplot related modules
@@ -119,7 +124,7 @@ params['gxsec'] = gxsec
 params['cur'] = 0  # this will be updated
 params['pkgcolors'] = [ 'blue', 'green' ] # for now
 
-col = 2
+col = 3
 row = 2
 idx = 1
 #
@@ -130,8 +135,34 @@ pl_enclave_rapl = plot_rapl(ax, params, enclave_lr['pkg'], enclave_lr['dram'], t
 idx += 1
 
 ax = plt.subplot(row, col, idx)
-pl_node_rapl = plot_rapl(ax, params, node_lr['pkg'], node_lr['dram'], titlestr="%s" % targetnode)
+pl_node_rapl = plot_rapl(ax, params, rapl_lr['pkg'], rapl_lr['dram'], titlestr="%s" % targetnode)
 idx += 1
+
+ax = plt.subplot(row, col, idx)
+pl_node_temp = plot_line_err(ax, params, temp_lr) # , titlestr="%s" % targetnode)
+idx += 1
+
+ax = plt.subplot(row, col, idx)
+pl_node_freq = plot_line_err(ax, params, freq_lr) # , titlestr="%s" % targetnode)
+idx += 1
+
+
+ax = plt.subplot(row, col, idx)
+pl_runtime = plot_runtime(ax, params, runtime_lr) # , titlestr="%s" % targetnode)
+idx += 1
+
+ax = plt.subplot(row, col, idx)
+pl_appperf = plot_appperf(ax, params, appperf_lr) # , titlestr="%s" % targetnode)
+idx += 1
+
+
+# ax = plt.subplot(row,col,idx)
+# pl_info = plot_info(ax, params)
+# idx += 1
+
+
+fig.tight_layout()
+
 
 ts = 0
 
@@ -168,13 +199,45 @@ while True:
         #
         # NODE Power
         elif e['node'] == targetnode and e['sample'] == 'energy':
+            t = e['time'] - ts
+            params['cur'] = t # this is used in update()
+
             for pkgid in range(npkgs):
                 tmppow = e['power']['p%d'%pkgid]
                 tmplim = e['powercap']['p%d'%pkgid]
                 tmppowdram =  e['power']['p%d/dram'%pkgid] * 0.25
-                node_lr['pkg'][pkgid].add(t, tmppow, tmplim)
-                node_lr['dram'][pkgid].add(t, tmppowdram)
+                rapl_lr['pkg'][pkgid].add(t, tmppow, tmplim)
+                rapl_lr['dram'][pkgid].add(t, tmppowdram)
             pl_node_rapl.update(params, enclave_lr['pkg'], enclave_lr['dram'])
+        elif e['node'] == targetnode and e['sample'] == 'temp':
+            t = e['time'] - ts
+            params['cur'] = t # this is used in update()
+            for p in range(npkgs):
+                v0 = e['p%d' % p]['mean']
+                v1 = e['p%d' % p]['std']
+                temp_lr[p].add(t,v0,v1)
+            pl_node_temp.update(params, temp_lr)
+        elif e['node'] == targetnode and e['sample'] == 'freq':
+            t = e['time'] - ts
+            params['cur'] = t # this is used in update()
+            for p in range(npkgs):
+                v0 = e['p%d' % p]['mean']
+                v1 = e['p%d' % p]['std']
+                freq_lr[p].add(t,v0,v1)
+            pl_node_freq.update(params, freq_lr, ptype = 'freq')
+        elif e['node'] == targetnode and e['sample'] == 'argobots':
+            t = e['time'] - ts
+            params['cur'] = t # this is used in update()
+            tmp = []
+            for tmpk in e['num_threads'].keys():
+                tmp.append(int(d['num_threads'][tmpk]))
+            runtime_lr[k].add(t,np.mean(tmp),np.std(tmp))
+            pl_runtime.update(params, runtime_lr)
+        elif e['node'] == targetnode and e['sample'] == 'appperf':
+            t = e['time'] - ts
+            params['cur'] = t # this is used in update()
+            v = d['app'] # XXX
+            pl_appperf.add(t,v)
 
     plt.draw()
 

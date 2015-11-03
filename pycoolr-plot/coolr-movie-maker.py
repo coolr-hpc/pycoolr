@@ -165,9 +165,9 @@ for k in addon_data.keys():
     if k == 'xsbench':
         addon_pl[k] = plot_xsbench(ax, params, addon_lr[k])
     elif k == 'Graph500':
-        addon_pl[k] = plot_graph500(ax, params, addon_lr[k])
+        addon_pl[k] = plot_appperf(ax, params, addon_lr[k])
     elif k == 'argobots':
-        addon_pl[k] = plot_argobots(ax, params, addon_lr[k])
+        addon_pl[k] = plot_runtime(ax, params, addon_lr[k])
 
     idx += 1
 

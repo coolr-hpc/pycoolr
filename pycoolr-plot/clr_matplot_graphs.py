@@ -147,7 +147,7 @@ class plot_xsbench:
         self.ax.set_xlabel('Time [S]')
         self.ax.set_ylabel('TTS [S]')
 
-class plot_graph500:
+class plot_appperf:
     def __init__(self, ax, params, lps):
         self.ax = ax
 
@@ -163,18 +163,17 @@ class plot_graph500:
         self.ax.cla() # this is a brute-force way to update
 
         self.ax.set_xlim([cur_t-gxsec, cur_t])
-        #self.ax.set_ylim(bottom=0)
+        self.ax.set_ylim(bottom=0)
 
         x = lps.getlistx()
         y = lps.getlisty()
-        #self.ax.plot(x,y, scaley=False, color='black', label='' )
-        self.ax.bar(x,y,  color='black', label='' )
+        self.ax.plot(x,y, scaley=True,  label='')
 
-        self.ax.legend(loc='lower left', prop={'size':9})
+#        self.ax.legend(loc='lower left', prop={'size':9})
         self.ax.set_xlabel('Time [S]')
-        self.ax.set_ylabel('TEPS')
+        self.ax.set_ylabel('App performance')
 
-class plot_argobots: # mean, std
+class plot_runtime: # mean, std
     def __init__(self, ax, params, pdata):
         self.ax = ax
         self.update(params, pdata)
@@ -190,12 +189,12 @@ class plot_argobots: # mean, std
         x = pdata.getlistx()
         y = pdata.getlisty()
         e = pdata.getlisto()
-        self.ax.plot(x,y,scaley=False,  label='')
+        self.ax.plot(x,y, scaley=True,  label='')
         self.ax.errorbar(x,y,yerr=e, lw=.2,  label = '')
 
         # we need to update labels everytime because of cla()
         self.ax.set_xlabel('Time [S]')
-        self.ax.set_ylabel('')
+        self.ax.set_ylabel('Runtime')
 #        self.ax.legend(loc='lower left', prop={'size':9})
 # ----------------------
 
