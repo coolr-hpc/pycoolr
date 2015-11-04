@@ -60,7 +60,9 @@ with open(cfgfn) as f:
 if len(targetnode) == 0 :
     targetnode = cfg['masternode']
     print 'Use %s as target node' % targetnode
-
+if len(enclave) == 0:
+    enclave = cfg['masternode']
+    print 'Use %s as enclave' % enclave
 
 if len(appcfgfn) > 0:
     with open(appcfgfn) as f:
@@ -132,7 +134,7 @@ idx = 1
 # CUSTOM
 #
 ax = plt.subplot(row, col, idx)
-pl_enclave_rapl = plot_rapl(ax, params, enclave_lr['pkg'], enclave_lr['dram'], titlestr='Enclave')
+pl_enclave_rapl = plot_rapl(ax, params, enclave_lr['pkg'], enclave_lr['dram'], titlestr='Enclave: %s' % enclave)
 idx += 1
 
 ax = plt.subplot(row, col, idx)
@@ -185,7 +187,7 @@ while True:
             t = 0
 
         # ENCLAVE Power 
-        if e['node'] == 'master' and e['sample'] == 'energy':
+        if e['node'] == enclave and e['sample'] == 'energy':
             t = e['time'] - ts
             params['cur'] = t # this is used in update()
 
@@ -233,10 +235,10 @@ while True:
                 tmp.append(int(e['num_threads'][tmpk]))
             runtime_lr.add(t,np.mean(tmp),np.std(tmp))
             pl_runtime.update(params, runtime_lr)
-        elif e['node'] == targetnode and e['sample'] == 'appperf':
+        elif e['node'] == targetnode and e['sample'] == 'application':
             t = e['time'] - ts
             params['cur'] = t # this is used in update()
-            v = e['val'] # XXX
+            v = e['#TE_per_sec'] # XXX
             appperf_lr.add(t,v)
             pl_appperf.update(params, appperf_lr)
 
