@@ -113,6 +113,7 @@ matplotlib.rcParams.update({'font.size': 12})
 from clr_matplot_graphs import *
 
 fig = plt.figure( figsize=(15,10) )
+fig.canvas.set_window_title('pycoolr live demo')
 
 plt.ion()
 plt.show()
@@ -179,14 +180,13 @@ while True:
         if not e.has_key('node'):
             continue
 
+        if ts == 0:
+            ts = e['time']
+            t = 0
+
         # ENCLAVE Power 
         if e['node'] == 'master' and e['sample'] == 'energy':
-            if ts == 0:
-                ts = e['time']
-                t = 0
-            else:
-                t = e['time'] - ts
-
+            t = e['time'] - ts
             params['cur'] = t # this is used in update()
 
             for pkgid in range(npkgs):
@@ -230,14 +230,15 @@ while True:
             params['cur'] = t # this is used in update()
             tmp = []
             for tmpk in e['num_threads'].keys():
-                tmp.append(int(d['num_threads'][tmpk]))
-            runtime_lr[k].add(t,np.mean(tmp),np.std(tmp))
+                tmp.append(int(e['num_threads'][tmpk]))
+            runtime_lr.add(t,np.mean(tmp),np.std(tmp))
             pl_runtime.update(params, runtime_lr)
         elif e['node'] == targetnode and e['sample'] == 'appperf':
             t = e['time'] - ts
             params['cur'] = t # this is used in update()
-            v = d['app'] # XXX
-            pl_appperf.add(t,v)
+            v = e['val'] # XXX
+            appperf_lr.add(t,v)
+            pl_appperf.update(params, appperf_lr)
 
     plt.draw()
 

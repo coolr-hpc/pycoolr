@@ -163,6 +163,7 @@ class plot_appperf:
         self.ax.cla() # this is a brute-force way to update
 
         self.ax.set_xlim([cur_t-gxsec, cur_t])
+        self.ax.autoscale_view(scaley=True)
         self.ax.set_ylim(bottom=0)
 
         x = lps.getlistx()
@@ -185,6 +186,7 @@ class plot_runtime: # mean, std
 
         self.ax.cla()
         self.ax.set_xlim([cur_t-gxsec, cur_t])
+        self.ax.autoscale_view(scaley=True)
 
         x = pdata.getlistx()
         y = pdata.getlisty()
