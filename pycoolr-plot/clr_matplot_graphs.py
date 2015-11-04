@@ -224,14 +224,16 @@ class plot_rapl:
         for t in ppkg:
             x = t.getlistx()
             ycap = t.getlisto()
-            self.ax.plot(x,ycap, scaley=False, color='red', label='PKG%dlimit'%pkgid )
+            #self.ax.plot(x,ycap, scaley=False, color='red', label='PKG%dlimit'%pkgid )
+            self.ax.plot(x,ycap, color='red', label='PKG%dlimit'%pkgid )
             pkgid += 1
 
         pkgid = 0
         for t in ppkg:
             x = t.getlistx()
             y = t.getlisty()
-            self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], label='PKG%d'%pkgid)
+            #self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], label='PKG%d'%pkgid)
+            self.ax.plot(x,y,color=params['pkgcolors'][pkgid], label='PKG%d'%pkgid)
             pkgid += 1
 
 
@@ -239,7 +241,8 @@ class plot_rapl:
         for t in pmem:
             x = t.getlistx()
             y = t.getlisty()
-            self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], linestyle='--', label='PKG%ddram'%pkgid)
+            #self.ax.plot(x,y,scaley=False,color=params['pkgcolors'][pkgid], linestyle='--', label='PKG%ddram'%pkgid)
+            self.ax.plot(x,y,color=params['pkgcolors'][pkgid], linestyle='--', label='PKG%ddram'%pkgid)
             pkgid += 1
 
         self.ax.legend(loc='lower left', prop={'size':9})

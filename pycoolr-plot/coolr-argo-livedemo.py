@@ -210,7 +210,7 @@ while True:
                 tmppowdram =  e['power']['p%d/dram'%pkgid] * 0.25
                 rapl_lr['pkg'][pkgid].add(t, tmppow, tmplim)
                 rapl_lr['dram'][pkgid].add(t, tmppowdram)
-            pl_node_rapl.update(params, enclave_lr['pkg'], enclave_lr['dram'])
+            pl_node_rapl.update(params, rapl_lr['pkg'], rapl_lr['dram'])
         elif e['node'] == targetnode and e['sample'] == 'temp':
             t = e['time'] - ts
             params['cur'] = t # this is used in update()
