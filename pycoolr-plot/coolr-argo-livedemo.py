@@ -247,7 +247,8 @@ while True:
     if len(j) > 0:
         lastdbid = int(j[-1]['dbid'])
 
-    time.sleep(1)
+    plt.pause(.5)
+    #time.sleep(1)
     t4=time.time()
 
     print 'Profile time: %.2lf %.2lf %.2lf %.2lf' % (t4-t1,  t2-t1, t3-t2, t4-t3)
