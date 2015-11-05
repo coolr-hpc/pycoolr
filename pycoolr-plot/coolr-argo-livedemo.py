@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+#
+# matplot-based live demo tool, customized for the Argo demo
+#
+# Contact: Kaz Yoshii <ky@anl.gov>
+#
+
 import sys, os, re
 import json
 import time
@@ -53,6 +59,9 @@ for o, a in opts:
     elif o in ("--enclave"):
         enclave=a
 
+#
+# load config files
+#
 
 with open(cfgfn) as f:
     cfg = json.load(f)
@@ -72,24 +81,42 @@ if len(appcfgfn) > 0:
         cfg[k] = appcfg[k]
 
 
+info = querydataj("%s --info" % cfg['querycmd'])[0]
+
+#
+#
+#
 try:
     logf = open(outputfn, 'w', 0) # unbuffered write
 except:
     print 'unable to open', outputfn
 
-lastdbid=0
-cmd=cfg['dbquerycmd']
+cmd=cfg['dbquerycmd'] # command to query the sqlite DB
 
-fps=1 # dummy
+lastdbid=0 # this is used to keep track the DB records
+npkgs=info['npkgs']
 lrlen=120  # to option
-gxsec = lrlen * (1.0/fps) # graph x-axis sec
-
-npkgs=2 # hardcode for now
+gxsec=lrlen # graph x-axis sec
 
 #
-# instantiate data list
+#
+#
+params = {}  # graph params XXX: extend for multinode
+params['cfg'] = cfg
+params['info'] = info
+params['lrlen'] = lrlen
+params['gxsec'] = gxsec
+params['cur'] = 0  # this will be updated
+params['pkgcolors'] = [ 'blue', 'green' ] # for now
+params['col'] = 3
+params['row'] = 2
+params['targetnode'] = targetnode
+
+#
+# Instantiate data list
 #
 # CUSTOM
+#
 
 enclave_lr = {}
 enclave_lr['pkg'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
@@ -102,8 +129,11 @@ rapl_lr['dram'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
 temp_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 freq_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 
-runtime_lr = listrotate2D(length=lrlen)
-appperf_lr = listrotate2D(length=lrlen)
+#runtime_lr = listrotate2D(length=lrlen)
+#appperf_lr = listrotate2D(length=lrlen)
+
+modulelist = [] # a list of graph modules
+
 
 #
 # matplot related modules
@@ -120,12 +150,6 @@ fig.canvas.set_window_title('pycoolr live demo')
 plt.ion()
 plt.show()
 
-params = {}  # graph params XXX: extend for multinode
-params['cfg'] = cfg
-#params['info'] = info
-params['gxsec'] = gxsec
-params['cur'] = 0  # this will be updated
-params['pkgcolors'] = [ 'blue', 'green' ] # for now
 
 col = 3
 row = 2
@@ -142,21 +166,32 @@ pl_node_rapl = plot_rapl(ax, params, rapl_lr['pkg'], rapl_lr['dram'], titlestr="
 idx += 1
 
 ax = plt.subplot(row, col, idx)
-pl_node_temp = plot_line_err(ax, params, temp_lr) # , titlestr="%s" % targetnode)
+pl_node_temp = plot_line_err(ax, params, temp_lr)
 idx += 1
 
 ax = plt.subplot(row, col, idx)
-pl_node_freq = plot_line_err(ax, params, freq_lr) # , titlestr="%s" % targetnode)
+pl_node_freq = plot_line_err(ax, params, freq_lr)
 idx += 1
 
 
-ax = plt.subplot(row, col, idx)
-pl_runtime = plot_runtime(ax, params, runtime_lr) # , titlestr="%s" % targetnode)
-idx += 1
+# register a new graph
+modnames = ['runtime']
 
-ax = plt.subplot(row, col, idx)
-pl_appperf = plot_appperf(ax, params, appperf_lr) # , titlestr="%s" % targetnode)
-idx += 1
+for k in modnames:
+    name='graph_%s' % k
+    m = __import__(name)
+    c = getattr(m, name)
+    modulelist.append( c(params, idx) )
+    idx += 1
+
+
+#ax = plt.subplot(row, col, idx)
+#pl_runtime = plot_runtime(ax, params, runtime_lr) # , titlestr="%s" % targetnode)
+#idx += 1
+
+#ax = plt.subplot(row, col, idx)
+#pl_appperf = plot_appperf(ax, params, appperf_lr) # , titlestr="%s" % targetnode)
+#idx += 1
 
 
 # ax = plt.subplot(row,col,idx)
@@ -167,7 +202,7 @@ idx += 1
 fig.tight_layout()
 
 
-ts = 0
+params['ts'] = 0
 
 while True:
     t1=time.time()
@@ -182,13 +217,13 @@ while True:
         if not e.has_key('node'):
             continue
 
-        if ts == 0:
-            ts = e['time']
+        if params['ts'] == 0:
+            params['ts'] = e['time']
             t = 0
 
         # ENCLAVE Power 
         if e['node'] == enclave and e['sample'] == 'energy':
-            t = e['time'] - ts
+            t = e['time'] - params['ts']
             params['cur'] = t # this is used in update()
 
             for pkgid in range(npkgs):
@@ -201,7 +236,7 @@ while True:
         #
         # NODE Power
         elif e['node'] == targetnode and e['sample'] == 'energy':
-            t = e['time'] - ts
+            t = e['time'] - params['ts']
             params['cur'] = t # this is used in update()
 
             for pkgid in range(npkgs):
@@ -212,7 +247,7 @@ while True:
                 rapl_lr['dram'][pkgid].add(t, tmppowdram)
             pl_node_rapl.update(params, rapl_lr['pkg'], rapl_lr['dram'])
         elif e['node'] == targetnode and e['sample'] == 'temp':
-            t = e['time'] - ts
+            t = e['time'] - params['ts']
             params['cur'] = t # this is used in update()
             for p in range(npkgs):
                 v0 = e['p%d' % p]['mean']
@@ -220,27 +255,16 @@ while True:
                 temp_lr[p].add(t,v0,v1)
             pl_node_temp.update(params, temp_lr)
         elif e['node'] == targetnode and e['sample'] == 'freq':
-            t = e['time'] - ts
+            t = e['time'] - params['ts']
             params['cur'] = t # this is used in update()
             for p in range(npkgs):
                 v0 = e['p%d' % p]['mean']
                 v1 = e['p%d' % p]['std']
                 freq_lr[p].add(t,v0,v1)
             pl_node_freq.update(params, freq_lr, ptype = 'freq')
-        elif e['node'] == targetnode and e['sample'] == 'argobots':
-            t = e['time'] - ts
-            params['cur'] = t # this is used in update()
-            tmp = []
-            for tmpk in e['num_threads'].keys():
-                tmp.append(int(e['num_threads'][tmpk]))
-            runtime_lr.add(t,np.mean(tmp),np.std(tmp))
-            pl_runtime.update(params, runtime_lr)
-        elif e['node'] == targetnode and e['sample'] == 'application':
-            t = e['time'] - ts
-            params['cur'] = t # this is used in update()
-            v = e['#TE_per_sec'] # XXX
-            appperf_lr.add(t,v)
-            pl_appperf.update(params, appperf_lr)
+        else:
+            for m in modulelist:
+                m.update(params,e)
 
     plt.draw()
 

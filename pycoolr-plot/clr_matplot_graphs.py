@@ -168,7 +168,7 @@ class plot_appperf:
 
         x = lps.getlistx()
         y = lps.getlisty()
-        self.ax.plot(x,y, scaley=True,  label='')
+        self.ax.plot(x,y, label='')
 
 #        self.ax.legend(loc='lower left', prop={'size':9})
         self.ax.set_xlabel('Time [S]')
