@@ -34,9 +34,9 @@ def gen_application():
     buf += '"time":%lf,' % t
     buf += '"node":"frontend",'
     buf += '"sample":"application",'
-    buf += '"#TE_per_sec_per_node":%lf,' %  (r.random() * 10000000.0)
-    buf += '"#TE_per_watt_per_node":%lf,' %  (r.random() * 10000000.0)
-    buf += '"#TE_per_sec":%lf}' %  (r.random() * 10000000.0)
+    buf += '"#TE_per_sec_per_node":%lf,' %  (r.random() * 100000.0)
+    buf += '"#TE_per_watt_per_node":%lf,' %  (r.random() * 100000.0)
+    buf += '"#TE_per_sec":%lf}' %  (r.random() * 100000.0)
     return buf
 
 def queryfakedataj():

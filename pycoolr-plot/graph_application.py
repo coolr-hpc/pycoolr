@@ -2,7 +2,8 @@
 
 from listrotate import *
 
-from clr_matplot_graphs import *
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 
 # the class name should match with the module name
@@ -46,6 +47,7 @@ class graph_application:
             ax.plot(x,y, scaley=True,  label='')
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('TE/sec/Node')
+            ax.set_title('Application') # fix label
             #
             #
             ax = self.ax_watt_per_node
@@ -60,7 +62,7 @@ class graph_application:
             ax.plot(x,y, scaley=True,  label='')
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('TE/Watt/Node')
-
+            ax.set_title('Application') # fix label
             #
             #
             ax = self.ax_sec
@@ -75,3 +77,5 @@ class graph_application:
             ax.plot(x,y, scaley=True,  label='')
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('TE/Sec')
+            ax.set_title('Application') # fix label
+            # ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%e'))

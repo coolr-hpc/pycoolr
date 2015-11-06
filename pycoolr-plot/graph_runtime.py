@@ -41,7 +41,8 @@ class graph_runtime:
             self.ax.errorbar(x,y,yerr=e, lw=.2,  label = '')
 
             self.ax.set_xlabel('Time [S]')
-            self.ax.set_ylabel('Runtime') # fix this
+            self.ax.set_ylabel('ES ??') # fix this
+            self.ax.set_title('Argobots')
             # self.ax.legend(loc='lower left', prop={'size':9})
 
             #
@@ -52,4 +53,5 @@ class graph_runtime:
             self.axbar.cla()
             self.axbar.bar(ind, tmpy, width = .6, edgecolor='none')
             self.axbar.set_xlabel('Stream ID')
-            self.axbar.set_ylabel('Runtime') # fix this
+            self.axbar.set_ylabel('ES ??') # fix this
+            self.axbar.set_title('Argobots')
