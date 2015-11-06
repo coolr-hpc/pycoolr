@@ -6,11 +6,9 @@ from clr_matplot_graphs import *
 
 # XXX: the class name should match with the module name
 class graph_runtime:
-    def __init__(self, params, idx):
+    def __init__(self, params, layout):
         self.runtime_lr = listrotate2D(length=params['lrlen'])
-
-        self.ax = plt.subplot(params['row'], params['col'], idx)
-        self.pl = plot_runtime(self.ax, params, self.runtime_lr) # , titlestr="%s" % targetnode)
+        self.ax = layout.getax()
 
     def update(self, params, sample):
         if sample['node'] == params['targetnode'] and sample['sample'] == 'argobots':

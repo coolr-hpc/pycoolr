@@ -114,8 +114,6 @@ params['lrlen'] = lrlen
 params['gxsec'] = gxsec
 params['cur'] = 0  # this will be updated
 params['pkgcolors'] = [ 'blue', 'green' ] # for now
-params['col'] = 3
-params['row'] = 2
 params['targetnode'] = targetnode
 
 #
@@ -156,40 +154,43 @@ fig.canvas.set_window_title('pycoolr live demo')
 plt.ion()
 plt.show()
 
+class layoutclass:
+    def __init__(self, row=2, col=4):
+        self.row = row
+        self.col = col
+        self.idx = 1
 
-col = 3
-row = 2
-idx = 1
+    def getax(self):
+        ax = plt.subplot(self.row, self.col, self.idx)
+        self.idx += 1
+        return ax
+
+layout = layoutclass(2,4)
+
 #
 # CUSTOM
 #
-ax = plt.subplot(row, col, idx)
+ax = layout.getax()
 pl_enclave_rapl = plot_rapl(ax, params, enclave_lr['pkg'], enclave_lr['dram'], titlestr='Enclave: %s' % enclave)
-idx += 1
 
-ax = plt.subplot(row, col, idx)
+ax = layout.getax()
 pl_node_rapl = plot_rapl(ax, params, rapl_lr['pkg'], rapl_lr['dram'], titlestr="%s" % targetnode)
-idx += 1
 
-ax = plt.subplot(row, col, idx)
+ax = layout.getax()
 pl_node_temp = plot_line_err(ax, params, temp_lr)
-idx += 1
 
-ax = plt.subplot(row, col, idx)
+ax = layout.getax()
 pl_node_freq = plot_line_err(ax, params, freq_lr)
-idx += 1
 
 
-# register a new graph
+# register a new graph. XXX: move to command line
 modnames = ['runtime']
 
 for k in modnames:
     name='graph_%s' % k
     m = __import__(name)
     c = getattr(m, name)
-    modulelist.append( c(params, idx) )
-    idx += 1
-
+    modulelist.append( c(params, layout) )
 
 #ax = plt.subplot(row, col, idx)
 #pl_runtime = plot_runtime(ax, params, runtime_lr) # , titlestr="%s" % targetnode)
