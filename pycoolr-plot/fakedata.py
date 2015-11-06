@@ -8,12 +8,17 @@ import json
 
 pkg0cpuid=[0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46]
 pkg1cpuid=[1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47]
+pkg0phyid=[0,1,2,3,4,5,8,9,10,11,12,13,0,1,2,3,4,5,8,9,10,11,12,13]
+pkg1phyid=[0,1,2,3,4,5,8,9,10,11,12,13,0,1,2,3,4,5,8,9,10,11,12,13]
+
 
 def gen_info(node):
     buf  = '{"nodeinfo":"%s","kernelversion":"4.1.3-argo","cpumodel":63,"memoryKB":131787416,"freqdriver":"pstate",'
     buf += '"samples":["temp","energy","freq"],"ncpus":48,"npkgs":2,'
     buf += '"pkg0":[%s],' % (','.join(map(str,pkg0cpuid)))
     buf += '"pkg1":[%s],' % (','.join(map(str,pkg1cpuid)))
+    buf += '"pkg0phyid":[%s],' % (','.join(map(str,pkg0phyid)))
+    buf += '"pkg1phyid":[%s],' % (','.join(map(str,pkg1phyid)))
     buf += '"nnodes":2}'
     return buf
 
@@ -73,14 +78,32 @@ def gen_mean_std(node,sample):
     buf += '"p1":{"mean":%lf,"std":%lf}}' % (r.random()*(30+50), r.random()*5)
     return buf
 
-def gen_freq(node,sample):
+def gen_freq(node):
     t = time.time()
     buf  = '{'
     buf += '"node":"%s",' % node
-    buf += '"sample":"%s",' % sample
+    buf += '"sample":"freq",'
     buf += '"time":%lf,' % t
-    buf += '"p0":{"mean":%lf,"std":%lf},' % (r.random()*(30+40), r.random()*7)
-    buf += '"p1":{"mean":%lf,"std":%lf}}' % (r.random()*(30+50), r.random()*5)
+    fn = []
+    fs = []
+    for i in pkg0cpuid:
+        f = r.random()*1.2 + 1.1
+        fn.append(f)
+        fs.append('"c%d":%.1lf' % (i,f))
+    m = np.mean(fn)
+    s = np.std(fn)
+    buf += '"p0":{"mean":%lf,"std":%lf,%s},' % (m, s, ','.join(fs))
+
+    fn = []
+    fs = []
+    for i in pkg0cpuid:
+        f = r.random()*1.1 + 1.3
+        fn.append(f)
+        fs.append('"c%d":%.1lf' % (i,f))
+    m = np.mean(fn)
+    s = np.std(fn)
+    buf += '"p1":{"mean":%lf,"std":%lf,%s}}' % (m, s, ','.join(fs))
+
     return buf
 
 def queryfakedataj():
@@ -92,7 +115,7 @@ def queryfakedataj():
 
     ret.append( json.loads(gen_rapl(node)) )
     ret.append( json.loads(gen_mean_std(node,"temp")) )
-    ret.append( json.loads(gen_mean_std(node,"freq")) )
+    ret.append( json.loads(gen_freq(node)) )
 
     ret.append( json.loads(gen_argobots(node)) )
     ret.append( json.loads(gen_application(node)) )
@@ -100,6 +123,7 @@ def queryfakedataj():
     return ret
 
 if __name__ == '__main__':
+
     node="v.node"
     print
     print json.loads(gen_info(node))
@@ -109,6 +133,8 @@ if __name__ == '__main__':
     print json.loads(gen_application(node))
     print
     print json.loads(gen_rapl(node))
+    print
+    print json.loads(gen_freq(node))
     print
     print json.loads(gen_mean_std(node, "temp"))
     print

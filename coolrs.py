@@ -165,7 +165,7 @@ class coolrmon_tracer:
 
         s += ',"nnodes":%d' % len(self.ct.nodecpus.keys())
         for n in sorted(self.ct.nodecpus.keys()):
-            s += ',"node%d":[' % p
+            s += ',"node%d":[' % n
             s += ','.join(map(str,self.ct.nodecpus[n]))
             s += ']'
 
