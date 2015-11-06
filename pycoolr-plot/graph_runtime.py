@@ -9,6 +9,7 @@ class graph_runtime:
     def __init__(self, params, layout):
         self.runtime_lr = listrotate2D(length=params['lrlen'])
         self.ax = layout.getax()
+        self.axbar = layout.getax()
 
     def update(self, params, sample):
         if sample['node'] == params['targetnode'] and sample['sample'] == 'argobots':
@@ -16,13 +17,16 @@ class graph_runtime:
             # data handling
             #
             t = sample['time'] - params['ts']
-            tmp = []
-            for tmpk in sample['num_threads'].keys():
-                tmp.append(int(sample['num_threads'][tmpk]))
 
-            self.runtime_lr.add(t,np.mean(tmp),np.std(tmp))
+            num_es = sample['num_es']
+            tmpy = [ 0.0 for i in range(num_es) ]
+            for i in range(num_es):
+                tmpy[i] += sample['num_threads']['es%d'%i]
+                tmpy[i] += sample['num_tasks']['es%d'%i]
+
+            self.runtime_lr.add(t,np.mean(tmpy),np.std(tmpy))
             #
-            # graph handling
+            # graph handling : linux+errbar
             #
             pdata = self.runtime_lr
             gxsec = params['gxsec']
@@ -37,7 +41,15 @@ class graph_runtime:
             self.ax.errorbar(x,y,yerr=e, lw=.2,  label = '')
 
             self.ax.set_xlabel('Time [S]')
-            self.ax.set_ylabel('Runtime')
+            self.ax.set_ylabel('Runtime') # fix this
             # self.ax.legend(loc='lower left', prop={'size':9})
 
-
+            #
+            # graph handling : bar
+            #
+            offset = 0
+            ind = np.arange(num_es) + offset
+            self.axbar.cla()
+            self.axbar.bar(ind, tmpy, width = .6, edgecolor='none')
+            self.axbar.set_xlabel('Stream ID')
+            self.axbar.set_ylabel('Runtime') # fix this
