@@ -117,6 +117,7 @@ params['gxsec'] = gxsec
 params['cur'] = 0  # this will be updated
 params['pkgcolors'] = [ 'blue', 'green' ] # for now
 params['targetnode'] = targetnode
+params['enclave'] = enclave
 
 #
 # Instantiate data list
@@ -124,9 +125,9 @@ params['targetnode'] = targetnode
 # CUSTOM
 #
 
-enclave_lr = {}
-enclave_lr['pkg'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
-enclave_lr['dram'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
+#enclave_lr = {}
+#enclave_lr['pkg'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
+#enclave_lr['dram'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
 
 rapl_lr = {}
 rapl_lr['pkg'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
@@ -135,8 +136,6 @@ rapl_lr['dram'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
 temp_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 freq_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
 
-#runtime_lr = listrotate2D(length=lrlen)
-#appperf_lr = listrotate2D(length=lrlen)
 
 modulelist = [] # a list of graph modules
 
@@ -172,8 +171,6 @@ layout = layoutclass(2,5)
 #
 # CUSTOM
 #
-ax = layout.getax()
-pl_enclave_rapl = plot_rapl(ax, params, enclave_lr['pkg'], enclave_lr['dram'], titlestr='Enclave: %s' % enclave)
 
 ax = layout.getax()
 pl_node_rapl = plot_rapl(ax, params, rapl_lr['pkg'], rapl_lr['dram'], titlestr="%s" % targetnode)
@@ -186,7 +183,7 @@ pl_node_freq = plot_line_err(ax, params, freq_lr)
 
 
 # register a new graph. XXX: move to command line
-modnames = ['runtime', 'application']
+modnames = ['runtime', 'application', 'enclave']
 
 for k in modnames:
     name='graph_%s' % k
@@ -236,21 +233,8 @@ while True:
             params['ts'] = e['time']
             t = 0
 
-        # ENCLAVE Power 
-        if e['node'] == enclave and e['sample'] == 'energy':
-            t = e['time'] - params['ts']
-            params['cur'] = t # this is used in update()
-
-            for pkgid in range(npkgs):
-                tmppow = e['power']['p%d'%pkgid]
-                tmplim = e['powercap']['p%d'%pkgid]
-                tmppowdram =  e['power']['p%d/dram'%pkgid] * 0.25
-                enclave_lr['pkg'][pkgid].add(t, tmppow, tmplim)
-                enclave_lr['dram'][pkgid].add(t, tmppowdram)
-            pl_enclave_rapl.update(params, enclave_lr['pkg'], enclave_lr['dram'])
-        #
         # NODE Power
-        elif e['node'] == targetnode and e['sample'] == 'energy':
+        if e['node'] == targetnode and e['sample'] == 'energy':
             t = e['time'] - params['ts']
             params['cur'] = t # this is used in update()
 
@@ -285,8 +269,7 @@ while True:
 
     profile_t3 = time.time()
 
-
-    plt.pause(.5)
+    # plt.pause(.5)
 
     profile_t4 = time.time()
 
