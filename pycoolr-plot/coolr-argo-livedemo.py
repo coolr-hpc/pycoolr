@@ -148,7 +148,7 @@ import matplotlib.animation as manimation
 matplotlib.rcParams.update({'font.size': 12})
 from clr_matplot_graphs import *
 
-fig = plt.figure( figsize=(15,10) )
+fig = plt.figure( figsize=(18,10) )
 fig.canvas.set_window_title('pycoolr live demo')
 
 plt.ion()
@@ -165,7 +165,7 @@ class layoutclass:
         self.idx += 1
         return ax
 
-layout = layoutclass(2,4)
+layout = layoutclass(2,5)
 
 #
 # CUSTOM
@@ -184,7 +184,7 @@ pl_node_freq = plot_line_err(ax, params, freq_lr)
 
 
 # register a new graph. XXX: move to command line
-modnames = ['runtime']
+modnames = ['runtime', 'application']
 
 for k in modnames:
     name='graph_%s' % k

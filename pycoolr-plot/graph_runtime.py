@@ -4,7 +4,7 @@ from listrotate import *
 
 from clr_matplot_graphs import *
 
-# XXX: the class name should match with the module name
+# the class name should match with the module name
 class graph_runtime:
     def __init__(self, params, layout):
         self.runtime_lr = listrotate2D(length=params['lrlen'])
@@ -26,7 +26,7 @@ class graph_runtime:
 
             self.runtime_lr.add(t,np.mean(tmpy),np.std(tmpy))
             #
-            # graph handling : linux+errbar
+            # graph handling : line+errbar
             #
             pdata = self.runtime_lr
             gxsec = params['gxsec']
