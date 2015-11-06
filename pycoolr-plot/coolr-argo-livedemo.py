@@ -19,6 +19,7 @@ appcfgfn='chameleon-app.cfg'
 outputfn='multinodes.json'
 targetnode=''
 enclave=''
+fakemode=False
 
 def usage():
     print ''
@@ -31,11 +32,12 @@ def usage():
     print ''
     print '--enclave name : enclave node name'
     print '--node  name : target node the node power, temp, freq and app graphs'
-    print '--appcfg fn : additional configuration for app graphs'
+    print ''
+    print '--fake: generate fakedata instead of querying'
     print ''
 
 shortopt = "h"
-longopt = ['output=','node=', 'cfg=', 'appcfg=', 'enclave=' ]
+longopt = ['output=','node=', 'cfg=', 'enclave=', 'fake' ]
 try:
     opts, args = getopt.getopt(sys.argv[1:],
                                shortopt, longopt)
@@ -54,10 +56,12 @@ for o, a in opts:
         targetnode=a
     elif o in ("--cfg"):
         cfgfn=a
-    elif o in ("--appcfg"):
-        appcfgfn=a
+#    elif o in ("--appcfg"):
+#        appcfgfn=a
     elif o in ("--enclave"):
         enclave=a
+    elif o in ("--fake"):
+        fakemode=True
 
 #
 # load config files
@@ -73,15 +77,17 @@ if len(enclave) == 0:
     enclave = cfg['masternode']
     print 'Use %s as enclave' % enclave
 
-if len(appcfgfn) > 0:
-    with open(appcfgfn) as f:
-        appcfg = json.load(f)
+#if len(appcfgfn) > 0:
+#    with open(appcfgfn) as f:
+#        appcfg = json.load(f)
+#    for k in appcfg.keys():
+#        cfg[k] = appcfg[k]
 
-    for k in appcfg.keys():
-        cfg[k] = appcfg[k]
-
-
-info = querydataj("%s --info" % cfg['querycmd'])[0]
+if fakemode:
+    import fakedata
+    info = json.loads(fakedata.gen_info())
+else:
+    info = querydataj("%s --info" % cfg['querycmd'])[0]
 
 #
 #
@@ -91,7 +97,7 @@ try:
 except:
     print 'unable to open', outputfn
 
-cmd=cfg['dbquerycmd'] # command to query the sqlite DB
+cmd = cfg['dbquerycmd'] # command to query the sqlite DB
 
 lastdbid=0 # this is used to keep track the DB records
 npkgs=info['npkgs']
@@ -205,13 +211,19 @@ fig.tight_layout()
 params['ts'] = 0
 
 while True:
-    t1=time.time()
-    if lastdbid > 0:
-        j = querydataj("%s --gtidx=%d" % (cmd, lastdbid))
-    else:
-        j = querydataj(cmd)
+    profile_t1 = time.time()
 
-    t2=time.time()
+    if fakemode:
+        j = fakedata.queryfakedataj()
+    else:
+        if lastdbid > 0:
+            j = querydataj("%s --gtidx=%d" % (cmd, lastdbid))
+        else:
+            j = querydataj(cmd)
+        if len(j) > 0:
+            lastdbid = int(j[-1]['dbid'])
+
+    profile_t2 = time.time()
     for e in j:
         # print e
         if not e.has_key('node'):
@@ -268,16 +280,16 @@ while True:
 
     plt.draw()
 
-    t3=time.time()
+    profile_t3 = time.time()
 
-    if len(j) > 0:
-        lastdbid = int(j[-1]['dbid'])
 
     plt.pause(.5)
-    #time.sleep(1)
-    t4=time.time()
 
-    print 'Profile time: %.2lf %.2lf %.2lf %.2lf' % (t4-t1,  t2-t1, t3-t2, t4-t3)
+    profile_t4 = time.time()
+
+    print 'Profile Time [S]: all=%.2lf (query:%.2lf draw:%.2lf misc:%.2lf)' %\
+        (profile_t4-profile_t1, profile_t2-profile_t1,\
+         profile_t3-profile_t2, profile_t4-profile_t3)
 
 sys.exit(0)
 
