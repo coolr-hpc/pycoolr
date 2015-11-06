@@ -85,7 +85,9 @@ if len(enclave) == 0:
 
 if fakemode:
     import fakedata
-    info = json.loads(fakedata.gen_info())
+    targetnode='v.node'
+    enclave = 'v.enclave'
+    info = json.loads(fakedata.gen_info(targetnode))
 else:
     info = querydataj("%s --info" % cfg['querycmd'])[0]
 
