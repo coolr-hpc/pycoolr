@@ -14,12 +14,17 @@ import getopt
 from listrotate import *
 from clr_utils import *
 
+# default values
+
+modnames = ['power', 'runtime', 'application', 'enclave' ]
 cfgfn='chameleon-argo-demo.cfg'
 appcfgfn='chameleon-app.cfg'
 outputfn='multinodes.json'
 targetnode=''
 enclave=''
 fakemode=False
+figwidth=20
+figheight=12
 
 def usage():
     print ''
@@ -33,11 +38,17 @@ def usage():
     print '--enclave name : enclave node name'
     print '--node  name : target node the node power, temp, freq and app graphs'
     print ''
+    print '--width=int  : the width of the entire figure (default: %d)' % figwidth
+    print '--height=int : the height of the entire figure (default: %d)' % figheight
+    print ''
     print '--fake: generate fakedata instead of querying'
+    print ''
+    print '--list : list available graph module names'
+    print '--mods=CSV : specify a list of graph modules using comma separated values'
     print ''
 
 shortopt = "h"
-longopt = ['output=','node=', 'cfg=', 'enclave=', 'fake' ]
+longopt = ['output=','node=', 'cfg=', 'enclave=', 'fake', 'width=', 'height=', 'list', 'mods=' ]
 try:
     opts, args = getopt.getopt(sys.argv[1:],
                                shortopt, longopt)
@@ -56,12 +67,25 @@ for o, a in opts:
         targetnode=a
     elif o in ("--cfg"):
         cfgfn=a
-#    elif o in ("--appcfg"):
-#        appcfgfn=a
     elif o in ("--enclave"):
         enclave=a
     elif o in ("--fake"):
         fakemode=True
+    elif o in ("--width"):
+        figwidth=int(a)
+    elif o in ("--height"):
+        figheight=int(a)
+    elif o in ("--list"):
+        print ''
+        print '[available graph modules]'
+        print ''
+        for i in modnames:
+            print i
+        print ''
+        print ''
+        sys.exit(0)
+    elif o in ("--mods"):
+        modnames = a.split(",")
 
 #
 # load config files
@@ -119,26 +143,6 @@ params['pkgcolors'] = [ 'blue', 'green' ] # for now
 params['targetnode'] = targetnode
 params['enclave'] = enclave
 
-#
-# Instantiate data list
-#
-# CUSTOM
-#
-
-#enclave_lr = {}
-#enclave_lr['pkg'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
-#enclave_lr['dram'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
-
-rapl_lr = {}
-rapl_lr['pkg'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
-rapl_lr['dram'] = [listrotate2D(length=lrlen) for i in range(npkgs)]
-
-temp_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
-freq_lr = [listrotate2D(length=lrlen) for i in range(npkgs)]
-
-
-modulelist = [] # a list of graph modules
-
 
 #
 # matplot related modules
@@ -149,7 +153,7 @@ import matplotlib.animation as manimation
 matplotlib.rcParams.update({'font.size': 12})
 from clr_matplot_graphs import *
 
-fig = plt.figure( figsize=(18,10) )
+fig = plt.figure( figsize=(figwidth,figheight) )
 fig.canvas.set_window_title('pycoolr live demo')
 
 plt.ion()
@@ -169,21 +173,11 @@ class layoutclass:
 layout = layoutclass(2,5)
 
 #
-# CUSTOM
+# register  new graph modules
+#
 #
 
-ax = layout.getax()
-pl_node_rapl = plot_rapl(ax, params, rapl_lr['pkg'], rapl_lr['dram'], titlestr="%s" % targetnode)
-
-ax = layout.getax()
-pl_node_temp = plot_line_err(ax, params, temp_lr)
-
-ax = layout.getax()
-pl_node_freq = plot_line_err(ax, params, freq_lr)
-
-
-# register a new graph. XXX: move to command line
-modnames = ['runtime', 'application', 'enclave']
+modulelist = [] # a list of graph modules
 
 for k in modnames:
     name='graph_%s' % k
@@ -191,22 +185,11 @@ for k in modnames:
     c = getattr(m, name)
     modulelist.append( c(params, layout) )
 
-#ax = plt.subplot(row, col, idx)
-#pl_runtime = plot_runtime(ax, params, runtime_lr) # , titlestr="%s" % targetnode)
-#idx += 1
-
-#ax = plt.subplot(row, col, idx)
-#pl_appperf = plot_appperf(ax, params, appperf_lr) # , titlestr="%s" % targetnode)
-#idx += 1
-
-
-# ax = plt.subplot(row,col,idx)
-# pl_info = plot_info(ax, params)
-# idx += 1
-
-
 fig.tight_layout()
 
+#
+#
+#
 
 params['ts'] = 0
 
@@ -233,37 +216,8 @@ while True:
             params['ts'] = e['time']
             t = 0
 
-        # NODE Power
-        if e['node'] == targetnode and e['sample'] == 'energy':
-            t = e['time'] - params['ts']
-            params['cur'] = t # this is used in update()
-
-            for pkgid in range(npkgs):
-                tmppow = e['power']['p%d'%pkgid]
-                tmplim = e['powercap']['p%d'%pkgid]
-                tmppowdram =  e['power']['p%d/dram'%pkgid] * 0.25
-                rapl_lr['pkg'][pkgid].add(t, tmppow, tmplim)
-                rapl_lr['dram'][pkgid].add(t, tmppowdram)
-            pl_node_rapl.update(params, rapl_lr['pkg'], rapl_lr['dram'])
-        elif e['node'] == targetnode and e['sample'] == 'temp':
-            t = e['time'] - params['ts']
-            params['cur'] = t # this is used in update()
-            for p in range(npkgs):
-                v0 = e['p%d' % p]['mean']
-                v1 = e['p%d' % p]['std']
-                temp_lr[p].add(t,v0,v1)
-            pl_node_temp.update(params, temp_lr)
-        elif e['node'] == targetnode and e['sample'] == 'freq':
-            t = e['time'] - params['ts']
-            params['cur'] = t # this is used in update()
-            for p in range(npkgs):
-                v0 = e['p%d' % p]['mean']
-                v1 = e['p%d' % p]['std']
-                freq_lr[p].add(t,v0,v1)
-            pl_node_freq.update(params, freq_lr, ptype = 'freq')
-        else:
-            for m in modulelist:
-                m.update(params,e)
+        for m in modulelist:
+            m.update(params,e)
 
     plt.draw()
 
@@ -278,4 +232,3 @@ while True:
          profile_t3-profile_t2, profile_t4-profile_t3)
 
 sys.exit(0)
-
