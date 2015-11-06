@@ -154,7 +154,7 @@ matplotlib.rcParams.update({'font.size': 12})
 from clr_matplot_graphs import *
 
 fig = plt.figure( figsize=(figwidth,figheight) )
-fig.canvas.set_window_title('pycoolr live demo')
+fig.canvas.set_window_title('COOLR live demo tool')
 
 plt.ion()
 plt.show()
