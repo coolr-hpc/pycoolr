@@ -27,12 +27,15 @@ figwidth=20
 figheight=12
 ncols=4
 nrows=3
+intervalsec=1.0
 
 def usage():
     print ''
     print 'Usage: %s [options]' % sys.argv[0]
     print ''
     print '[options]'
+    print ''
+    print '--interval=sec: specify the interval in sec. no guarantee. (default: %.1f)' % intervalsec
     print ''
     print '--cfg fn : the main configuration (default: %s)' % cfgfn
     print '--outputfn fn : specify output fiflename (default: %s)' % outputfn
@@ -236,12 +239,14 @@ while True:
 
     profile_t3 = time.time()
 
-    # plt.pause(.5)
 
-    profile_t4 = time.time()
+    pausesec = 0.0
+    if intervalsec > profile_t3-profile_t1:
+        pausesec = intervalsec - (profile_t3-profile_t1)
+    plt.pause(pausesec)
 
     print 'Profile Time [S]: all=%.2lf (query:%.2lf draw:%.2lf misc:%.2lf)' %\
-        (profile_t4-profile_t1, profile_t2-profile_t1,\
-         profile_t3-profile_t2, profile_t4-profile_t3)
+        (profile_t3-profile_t1+pausesec, profile_t2-profile_t1,\
+         profile_t3-profile_t2, pausesec)
 
 sys.exit(0)
