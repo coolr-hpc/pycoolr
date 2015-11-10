@@ -19,10 +19,13 @@ class graph_runtime:
             t = sample['time'] - params['ts']
 
             num_es = sample['num_es']
-            tmpy = [ 0.0 for i in range(num_es) ]
-            for i in range(num_es):
-                tmpy[i] += sample['num_threads']['es%d'%i]
-                tmpy[i] += sample['num_tasks']['es%d'%i]
+            tmpy = [ 0.0 for i in range(48) ]
+            for i in range(48):
+                if i < 48:
+                    tmpy[i] += sample['num_threads']['es%d'%i]
+                    tmpy[i] += sample['num_tasks']['es%d'%i]
+                else:
+                    tmpy[i] = 0
 
             self.runtime_lr.add(t,np.mean(tmpy),np.std(tmpy))
             #
