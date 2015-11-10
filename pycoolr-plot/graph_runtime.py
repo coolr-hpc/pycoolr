@@ -19,7 +19,7 @@ class graph_runtime:
             t = sample['time'] - params['ts']
 
             num_es = sample['num_es']
-            tmpy = [ 0.0 for i in range(48) ]
+            tmpy = [ 0.0 for i in range(num_es) ]
             for i in range(num_es):
                 tmpy[i] += sample['num_threads']['es%d'%i]
                 tmpy[i] += sample['num_tasks']['es%d'%i]
