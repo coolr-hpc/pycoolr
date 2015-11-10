@@ -124,6 +124,7 @@ if fakemode:
 else:
     info = querydataj("%s --info" % cfg['querycmd'])[0]
 
+    
 #
 #
 #
@@ -131,6 +132,8 @@ try:
     logf = open(outputfn, 'w', 0) # unbuffered write
 except:
     print 'unable to open', outputfn
+
+print >>logf, json.dumps(info)
 
 cmd = cfg['dbquerycmd'] # command to query the sqlite DB
 
@@ -218,7 +221,7 @@ while True:
 
     profile_t2 = time.time()
     for e in j:
-        # print e
+        print >>logf, json.dumps(e)
         if not e.has_key('node'):
             continue
 
