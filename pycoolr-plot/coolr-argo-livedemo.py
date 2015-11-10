@@ -143,6 +143,7 @@ gxsec=lrlen # graph x-axis sec
 #
 #
 params = {}  # graph params XXX: extend for multinode
+params['outputfn'] = outputfn
 params['cfg'] = cfg
 params['info'] = info
 params['lrlen'] = lrlen

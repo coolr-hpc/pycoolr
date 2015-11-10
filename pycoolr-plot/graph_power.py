@@ -24,6 +24,11 @@ class graph_power:
 
             for pkgid in range(self.npkgs):
                 tmppow = sample['power']['p%d'%pkgid]
+                if tmppow < 0:
+                    print
+                    print 'WARNING: power is negative. Check %s' % (tmppow, params['outputfn'])
+                    print
+                    return
                 tmplim = sample['powercap']['p%d'%pkgid]
                 tmppowdram =  sample['power']['p%d/dram'%pkgid]
                 self.data_lr['pkg'][pkgid].add(t, tmppow, tmplim)

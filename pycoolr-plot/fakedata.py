@@ -66,6 +66,8 @@ def gen_rapl(node):
     buf += '"powercap":{"p0":120.0,"p1":120.0,"p0/dram":0.0,"p1/dram":0.0},'
     p1=r.random()*60.0 + 50
     p2=r.random()*60.0 + 60
+    #if r.random() < 0.1:
+    #p2 = -100
     p1d=r.random()*20.0 + 10
     p2d=r.random()*20.0 + 10
     buf += '"power":{"total":%.1lf,"p0":%.1lf,"p1":%.1lf,"p0/dram":%.1lf,"p1/dram":%.1lf}}' %\
