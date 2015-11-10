@@ -16,7 +16,7 @@ from clr_utils import *
 
 # default values
 
-modnames = ['runtime', 'application', 'power', 'temp', 'enclave']
+modnames = ['runtime', 'application', 'power', 'temp', 'freq', 'enclave']
 cfgfn='chameleon-argo-demo.cfg'
 appcfgfn='chameleon-app.cfg'
 outputfn='multinodes.json'
@@ -25,6 +25,8 @@ enclave=''
 fakemode=False
 figwidth=20
 figheight=12
+ncols=4
+nrows=3
 
 def usage():
     print ''
@@ -40,6 +42,9 @@ def usage():
     print ''
     print '--width=int  : the width of the entire figure (default: %d)' % figwidth
     print '--height=int : the height of the entire figure (default: %d)' % figheight
+    print ''
+    print '--ncols : the number of columns (default: %s)' % ncols
+    print '--nrows : the number of rows (default: %s)' % nrows
     print ''
     print '--fake: generate fakedata instead of querying'
     print ''
@@ -170,7 +175,7 @@ class layoutclass:
         self.idx += 1
         return ax
 
-layout = layoutclass(2,5)
+layout = layoutclass(nrows, ncols)
 
 #
 # register  new graph modules
@@ -185,7 +190,7 @@ for k in modnames:
     c = getattr(m, name)
     modulelist.append( c(params, layout) )
 
-fig.tight_layout()
+fig.tight_layout(pad=2.0) # w_pad=1.0, h_pad=2.0
 
 #
 #
