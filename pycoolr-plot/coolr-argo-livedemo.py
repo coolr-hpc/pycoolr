@@ -16,7 +16,7 @@ from clr_utils import *
 
 # default values
 
-modnames = ['runtime', 'application', 'power', 'enclave']
+modnames = ['runtime', 'application', 'power', 'temp', 'enclave']
 cfgfn='chameleon-argo-demo.cfg'
 appcfgfn='chameleon-app.cfg'
 outputfn='multinodes.json'
