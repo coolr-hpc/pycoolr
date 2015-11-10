@@ -51,7 +51,10 @@ class graph_application:
                 x = pdata.getlistx()
                 y = pdata.getlisty()
 
-                ax.step(x,y, scaley=True, label='')
+                # ax.step(x,y, scaley=True, label='')
+                ax.bar(x, y, width = .6, edgecolor='none', color='#77bb88' )
+                ax.plot(x,y, 'ro', scaley=True, label='')
+
                 ax.set_xlabel('Time [S]')
                 ax.set_ylabel(label)
 
