@@ -38,11 +38,11 @@ class graph_runtime:
             y = pdata.getlisty()
             e = pdata.getlisto()
             self.ax.plot(x,y, scaley=True,  label='')
-            self.ax.errorbar(x,y,yerr=e, lw=.2,  label = '')
+            self.ax.errorbar(x,y,yerr=e, lw=.2, label = '')
 
             self.ax.set_xlabel('Time [S]')
             self.ax.set_ylabel('ES ??') # fix this
-            self.ax.set_title('Argobots')
+            self.ax.set_title('Argobots: %s' % params['targetnode'])
             # self.ax.legend(loc='lower left', prop={'size':9})
 
             #
@@ -51,7 +51,7 @@ class graph_runtime:
             offset = 0
             ind = np.arange(num_es) + offset
             self.axbar.cla()
-            self.axbar.bar(ind, tmpy, width = .6, edgecolor='none')
+            self.axbar.bar(ind, tmpy, width = .6, edgecolor='none', color='#ddddee' )
             self.axbar.set_xlabel('Stream ID')
             self.axbar.set_ylabel('ES ??') # fix this
-            self.axbar.set_title('Argobots')
+            self.axbar.set_title('Argobots: %s' % params['targetnode'])

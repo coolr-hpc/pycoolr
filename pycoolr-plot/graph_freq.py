@@ -33,7 +33,9 @@ class graph_freq:
             self.ax.cla()
             self.ax.set_xlim([t-gxsec, t])
 
-            # self.ax.axis([t-gxsec, t, cfg['freqmin'], cfg['freqmax']])
+            cfg = params['cfg']
+            self.ax.set_ylim([cfg['freqmin'], cfg['freqmax']])
+            self.ax.axhspan(cfg["freqnorm"], cfg["freqmax"], facecolor='#eeeeee' ) #, alpha=0.1)
 
             pdata = self.freq_lr
             pkgid = 0
@@ -46,7 +48,7 @@ class graph_freq:
                 pkgid += 1
 
             self.ax.set_xlabel('Time [S]')
-            self.ax.set_ylabel('Core Frequency [GHz]')
-            self.ax.set_title('Node Frequencies')
+            self.ax.set_ylabel('Active Frequency [GHz]')
+            self.ax.set_title('Frequency: %s' % params['targetnode'] )
 
             self.ax.legend(loc='lower left', prop={'size':9})

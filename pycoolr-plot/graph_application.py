@@ -78,6 +78,11 @@ class graph_application:
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('TE/Sec')
             # ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%e'))
+
+            self.ax_sec_per_node.set_title('Application: %s' % params['targetnode'])
+            self.ax_watt_per_node.set_title('Application: %s' % params['targetnode'])
+            self.ax_sec.set_title('Application: %s' % params['targetnode'])
+
         else:
             t = sample['time'] - params['ts']
             gxsec = params['gxsec']
@@ -86,7 +91,7 @@ class graph_application:
             self.ax_watt_per_node.set_xlim([t-gxsec, t])
             self.ax_sec.set_xlim([t-gxsec, t])
 
-            self.ax_sec_per_node.set_title('Application')
-            self.ax_watt_per_node.set_title('Application')
-            self.ax_sec.set_title('Application')
+            self.ax_sec_per_node.set_title('Application: %s' % params['targetnode'])
+            self.ax_watt_per_node.set_title('Application: %s' % params['targetnode'])
+            self.ax_sec.set_title('Application: %s' % params['targetnode'])
 

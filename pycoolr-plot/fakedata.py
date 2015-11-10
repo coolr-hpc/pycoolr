@@ -88,14 +88,26 @@ def gen_mean_std(node,sample):
 
 def gen_freq(node):
     t = time.time()
+    gen_freq.cnt += 1
+
     buf  = '{'
     buf += '"node":"%s",' % node
     buf += '"sample":"freq",'
     buf += '"time":%lf,' % t
     fn = []
     fs = []
+    a = (gen_freq.cnt/5) % 3
     for i in pkg0cpuid:
-        f = r.random()*1.2 + 1.1
+        if a == 0:
+            f = r.random()*0.4
+        elif a == 1:
+            if (i%2)==0:
+                f = r.random()*2.3
+            else:
+                f = r.random()*0.4
+        elif a == 2:
+            f = r.random()*3.1
+
         fn.append(f)
         fs.append('"c%d":%.1lf' % (i,f))
     m = np.mean(fn)
@@ -105,7 +117,7 @@ def gen_freq(node):
     fn = []
     fs = []
     for i in pkg0cpuid:
-        f = r.random()*1.1 + 1.3
+        f = r.random()*2.3 + 0.3
         fn.append(f)
         fs.append('"c%d":%.1lf' % (i,f))
     m = np.mean(fn)
@@ -113,6 +125,7 @@ def gen_freq(node):
     buf += '"p1":{"mean":%lf,"std":%lf,%s}}' % (m, s, ','.join(fs))
 
     return buf
+gen_freq.cnt = 0
 
 def queryfakedataj():
     node="v.node"
