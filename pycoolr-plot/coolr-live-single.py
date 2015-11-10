@@ -306,8 +306,8 @@ while True:
     #
     plt.subplot(2,4,subplotidx)
     subplotidx = subplotidx +1
-    plt.axis([rel_t - maxpoints*interval, rel_t, config["mintemp"], config["maxtemp"]]) # [xmin,xmax,ymin,ymax]
-#    plt.axhspan( 70, maxtemp, facecolor='#eeeeee', alpha=0.5)
+    plt.axis([rel_t - maxpoints*interval, rel_t, config["tempmin"], config["tempmax"]]) # [xmin,xmax,ymin,ymax]
+#    plt.axhspan( 70, tempmax, facecolor='#eeeeee', alpha=0.5)
 
     for pkgid in range(0, npkgs):
         l_meanqs=list(meanqs[pkgid])
@@ -466,7 +466,7 @@ while True:
             A.append(tmp)
 
         ax = plt.gca()
-        cax = ax.imshow(A, cmap=cm.jet , vmin=config["mintemp"], vmax=config["maxtemp"] ,aspect=0.7, interpolation='none') # interpolation='nearest' 
+        cax = ax.imshow(A, cmap=cm.jet , vmin=config["tempmin"], vmax=config["tempmax"] ,aspect=0.7, interpolation='none') # interpolation='nearest' 
         cbar = fig.colorbar( cax )
         plt.xticks( [] )
         plt.yticks( [] )

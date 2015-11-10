@@ -268,7 +268,7 @@ class plot_line_err: # used for temp and freq (mean+std)
 
         self.ax.cla() # this is a brute-force way to update. I don't know how to update errorbar correctly.
         if ptype == 'temp':
-            self.ax.axis([cur_t-gxsec, cur_t, cfg['mintemp'], cfg['maxtemp']]) # [xmin,xmax,ymin,ymax]
+            self.ax.axis([cur_t-gxsec, cur_t, cfg['tempmin'], cfg['tempmax']]) # [xmin,xmax,ymin,ymax]
         elif ptype == 'freq':
             self.ax.axis([cur_t-gxsec, cur_t, cfg['freqmin'], cfg['freqmax']]) # [xmin,xmax,ymin,ymax]
             plt.axhspan(cfg["freqnorm"], cfg["freqmax"], facecolor='#eeeeee', alpha=0.5)

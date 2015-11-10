@@ -77,7 +77,6 @@ class graph_application:
             ax.step(x,y, scaley=True,  label='')
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('TE/Sec')
-            ax.set_title('Application') # fix label
             # ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%e'))
         else:
             t = sample['time'] - params['ts']
@@ -86,3 +85,8 @@ class graph_application:
             self.ax_sec_per_node.set_xlim([t-gxsec, t])
             self.ax_watt_per_node.set_xlim([t-gxsec, t])
             self.ax_sec.set_xlim([t-gxsec, t])
+
+            self.ax_sec_per_node.set_title('Application')
+            self.ax_watt_per_node.set_title('Application')
+            self.ax_sec.set_title('Application')
+
