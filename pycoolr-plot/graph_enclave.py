@@ -25,7 +25,7 @@ class graph_enclave:
             for pkgid in range(self.npkgs):
                 tmppow = sample['power']['p%d'%pkgid]
                 tmplim = sample['powercap']['p%d'%pkgid]
-                tmppowdram =  sample['power']['p%d/dram'%pkgid] * 0.25 # workaround!!
+                tmppowdram =  sample['power']['p%d/dram'%pkgid]
                 self.data_lr['pkg'][pkgid].add(t, tmppow, tmplim)
                 self.data_lr['dram'][pkgid].add(t, tmppowdram)
             self.pl.update(params, self.data_lr['pkg'], self.data_lr['dram'])
