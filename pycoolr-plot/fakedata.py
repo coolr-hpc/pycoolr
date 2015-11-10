@@ -42,6 +42,10 @@ def gen_argobots(node):
 
 def gen_application(node):
     t = time.time()
+    gen_application.cnt += 1
+    a = (gen_application.cnt % 60)
+    if not a in [i for i in range(20,40,2)]:
+        return ""
     buf  = '{'
     buf += '"time":%lf,' % t
     buf += '"node":"%s",' % node
@@ -50,6 +54,8 @@ def gen_application(node):
     buf += '"#TE_per_watt_per_node":%lf,' %  (r.random() * 100000.0)
     buf += '"#TE_per_sec":%lf}' %  (r.random() * 100000.0)
     return buf
+gen_application.cnt  = 0
+
 
 def gen_rapl(node):
     t = time.time()
@@ -110,16 +116,17 @@ def queryfakedataj():
     node="v.node"
     enclave="v.enclave"
     ret = []
-    ret.append( json.loads(gen_info(node)) )
-    ret.append( json.loads(gen_rapl(enclave)) )
+    ba = [ gen_info(node),
+           gen_rapl(enclave),
+           gen_rapl(node),
+           gen_mean_std(node,"temp"),
+           gen_freq(node),
+           gen_argobots(node),
+           gen_application(node) ]
 
-    ret.append( json.loads(gen_rapl(node)) )
-    ret.append( json.loads(gen_mean_std(node,"temp")) )
-    ret.append( json.loads(gen_freq(node)) )
-
-    ret.append( json.loads(gen_argobots(node)) )
-    ret.append( json.loads(gen_application(node)) )
-
+    for b in ba:
+        if len(b) > 0:
+            ret.append(json.loads(b))
     return ret
 
 if __name__ == '__main__':

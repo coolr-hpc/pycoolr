@@ -44,7 +44,7 @@ class graph_application:
             x = pdata.getlistx()
             y = pdata.getlisty()
 
-            ax.plot(x,y, scaley=True,  label='')
+            ax.step(x,y, scaley=True,  label='')
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('TE/sec/Node')
             ax.set_title('Application') # fix label
@@ -59,7 +59,7 @@ class graph_application:
             x = pdata.getlistx()
             y = pdata.getlisty()
 
-            ax.plot(x,y, scaley=True,  label='')
+            ax.step(x,y, scaley=True,  label='')
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('TE/Watt/Node')
             ax.set_title('Application') # fix label
@@ -74,8 +74,15 @@ class graph_application:
             x = pdata.getlistx()
             y = pdata.getlisty()
 
-            ax.plot(x,y, scaley=True,  label='')
+            ax.step(x,y, scaley=True,  label='')
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('TE/Sec')
             ax.set_title('Application') # fix label
             # ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%e'))
+        else:
+            t = sample['time'] - params['ts']
+            gxsec = params['gxsec']
+
+            self.ax_sec_per_node.set_xlim([t-gxsec, t])
+            self.ax_watt_per_node.set_xlim([t-gxsec, t])
+            self.ax_sec.set_xlim([t-gxsec, t])
