@@ -50,7 +50,7 @@ def usage():
     print '--ncols : the number of columns (default: %s)' % ncols
     print '--nrows : the number of rows (default: %s)' % nrows
     print ''
-    print '--appname name : used for the application graph titile'
+    print '--addcfg cfg : add-on config file for application specific values'
     print ''
     print '--fake: generate fakedata instead of querying'
     print ''
@@ -242,11 +242,11 @@ while True:
 
     profile_t3 = time.time()
 
-
     pausesec = 0.0
     if intervalsec > profile_t3-profile_t1:
         pausesec = intervalsec - (profile_t3-profile_t1)
-    plt.pause(pausesec)
+    if pausesec > 0.0:
+        plt.pause(pausesec)
 
     print 'Profile Time [S]: all=%.2lf (query:%.2lf draw:%.2lf misc:%.2lf)' %\
         (profile_t3-profile_t1+pausesec, profile_t2-profile_t1,\
