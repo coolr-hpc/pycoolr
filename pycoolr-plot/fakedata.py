@@ -44,7 +44,7 @@ def gen_application(node):
     t = time.time()
     gen_application.cnt += 1
     a = (gen_application.cnt % 60)
-    if not a in [i for i in range(20,40,2)]:
+    if not a in [i for i in range(5,25,2)]:
         return ""
     buf  = '{'
     buf += '"time":%lf,' % t

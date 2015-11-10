@@ -18,7 +18,7 @@ from clr_utils import *
 
 modnames = ['runtime', 'application', 'power', 'temp', 'freq', 'enclave']
 cfgfn='chameleon-argo-demo.cfg'
-appcfgfn='chameleon-app.cfg'
+appcfgfn=''
 outputfn='multinodes.json'
 targetnode=''
 enclave=''
@@ -28,7 +28,6 @@ figheight=12
 ncols=4
 nrows=3
 intervalsec=1.0
-appname='Application'
 
 def usage():
     print ''
@@ -50,7 +49,7 @@ def usage():
     print '--ncols : the number of columns (default: %s)' % ncols
     print '--nrows : the number of rows (default: %s)' % nrows
     print ''
-    print '--addcfg cfg : add-on config file for application specific values'
+    print '--appcfg cfg : add-on config for application specific values'
     print ''
     print '--fake: generate fakedata instead of querying'
     print ''
@@ -59,7 +58,7 @@ def usage():
     print ''
 
 shortopt = "h"
-longopt = ['output=','node=', 'cfg=', 'enclave=', 'fake', 'width=', 'height=', 'list', 'mods=', 'ncols=', 'nrows=' ]
+longopt = ['output=','node=', 'cfg=', 'enclave=', 'fake', 'width=', 'height=', 'list', 'mods=', 'ncols=', 'nrows=', 'appcfg=' ]
 try:
     opts, args = getopt.getopt(sys.argv[1:],
                                shortopt, longopt)
@@ -78,6 +77,8 @@ for o, a in opts:
         targetnode=a
     elif o in ("--cfg"):
         cfgfn=a
+    elif o in ("--appcfg"):
+        appcfgfn=a
     elif o in ("--enclave"):
         enclave=a
     elif o in ("--fake"):
@@ -116,11 +117,16 @@ if len(enclave) == 0:
     enclave = cfg['masternode']
     print 'Use %s as enclave' % enclave
 
-#if len(appcfgfn) > 0:
-#    with open(appcfgfn) as f:
-#        appcfg = json.load(f)
-#    for k in appcfg.keys():
-#        cfg[k] = appcfg[k]
+if len(appcfgfn) > 0:
+    with open(appcfgfn) as f:
+        appcfg = json.load(f)
+    for k in appcfg.keys():
+        cfg[k] = appcfg[k]
+
+    if not (cfg.has_key('appname') and cfg.has_key('appsamples')):
+        print "Please double check %s: appname or appsamples tags" % appcfgfn
+        sys.exit(1)
+
 
 if fakemode:
     import fakedata
@@ -161,7 +167,7 @@ params['cur'] = 0  # this will be updated
 params['pkgcolors'] = [ 'blue', 'green' ] # for now
 params['targetnode'] = targetnode
 params['enclave'] = enclave
-params['appname'] = appname
+
 
 #
 # matplot related modules
