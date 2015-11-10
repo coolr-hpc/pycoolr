@@ -28,6 +28,7 @@ figheight=12
 ncols=4
 nrows=3
 intervalsec=1.0
+appname='Application'
 
 def usage():
     print ''
@@ -35,7 +36,7 @@ def usage():
     print ''
     print '[options]'
     print ''
-    print '--interval=sec: specify the interval in sec. no guarantee. (default: %.1f)' % intervalsec
+    print '--interval sec: specify the interval in sec. no guarantee. (default: %.1f)' % intervalsec
     print ''
     print '--cfg fn : the main configuration (default: %s)' % cfgfn
     print '--outputfn fn : specify output fiflename (default: %s)' % outputfn
@@ -43,11 +44,13 @@ def usage():
     print '--enclave name : enclave node name'
     print '--node  name : target node the node power, temp, freq and app graphs'
     print ''
-    print '--width=int  : the width of the entire figure (default: %d)' % figwidth
-    print '--height=int : the height of the entire figure (default: %d)' % figheight
+    print '--width int  : the width of the entire figure (default: %d)' % figwidth
+    print '--height int : the height of the entire figure (default: %d)' % figheight
     print ''
     print '--ncols : the number of columns (default: %s)' % ncols
     print '--nrows : the number of rows (default: %s)' % nrows
+    print ''
+    print '--appname name : used for the application graph titile'
     print ''
     print '--fake: generate fakedata instead of querying'
     print ''
@@ -158,7 +161,7 @@ params['cur'] = 0  # this will be updated
 params['pkgcolors'] = [ 'blue', 'green' ] # for now
 params['targetnode'] = targetnode
 params['enclave'] = enclave
-
+params['appname'] = appname
 
 #
 # matplot related modules

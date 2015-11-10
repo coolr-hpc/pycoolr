@@ -19,7 +19,7 @@ class graph_runtime:
             t = sample['time'] - params['ts']
 
             num_es = sample['num_es']
-            tmpy = [ 0.0 for i in range(num_es) ]
+            tmpy = [ 0.0 for i in range(48) ]
             for i in range(num_es):
                 tmpy[i] += sample['num_threads']['es%d'%i]
                 tmpy[i] += sample['num_tasks']['es%d'%i]
@@ -41,7 +41,7 @@ class graph_runtime:
             self.ax.errorbar(x,y,yerr=e, lw=.2, label = '')
 
             self.ax.set_xlabel('Time [S]')
-            self.ax.set_ylabel('ES ??') # fix this
+            self.ax.set_ylabel('# of Work Units')
             self.ax.set_title('Argobots: %s' % params['targetnode'])
             # self.ax.legend(loc='lower left', prop={'size':9})
 
@@ -53,5 +53,5 @@ class graph_runtime:
             self.axbar.cla()
             self.axbar.bar(ind, tmpy, width = .6, edgecolor='none', color='#ddddee' )
             self.axbar.set_xlabel('Stream ID')
-            self.axbar.set_ylabel('ES ??') # fix this
+            self.axbar.set_ylabel('# of Work Units')
             self.axbar.set_title('Argobots: %s' % params['targetnode'])

@@ -47,7 +47,6 @@ class graph_application:
             ax.step(x,y, scaley=True,  label='')
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('TE/sec/Node')
-            ax.set_title('Application') # fix label
             #
             #
             ax = self.ax_watt_per_node
@@ -62,7 +61,6 @@ class graph_application:
             ax.step(x,y, scaley=True,  label='')
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('TE/Watt/Node')
-            ax.set_title('Application') # fix label
             #
             #
             ax = self.ax_sec
@@ -79,9 +77,9 @@ class graph_application:
             ax.set_ylabel('TE/Sec')
             # ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%e'))
 
-            self.ax_sec_per_node.set_title('Application: %s' % params['targetnode'])
-            self.ax_watt_per_node.set_title('Application: %s' % params['targetnode'])
-            self.ax_sec.set_title('Application: %s' % params['targetnode'])
+            self.ax_sec_per_node.set_title('%s: %s' % (params['appname'],params['targetnode']) )
+            self.ax_watt_per_node.set_title('%s: %s' % (params['appname'],params['targetnode']) )
+            self.ax_sec.set_title('%s: %s' % (params['appname'],params['targetnode']))
 
         else:
             t = sample['time'] - params['ts']
