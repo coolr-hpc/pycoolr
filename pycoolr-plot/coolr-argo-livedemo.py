@@ -53,7 +53,7 @@ def usage():
     print ''
 
 shortopt = "h"
-longopt = ['output=','node=', 'cfg=', 'enclave=', 'fake', 'width=', 'height=', 'list', 'mods=' ]
+longopt = ['output=','node=', 'cfg=', 'enclave=', 'fake', 'width=', 'height=', 'list', 'mods=', 'ncols=', 'nrows=' ]
 try:
     opts, args = getopt.getopt(sys.argv[1:],
                                shortopt, longopt)
@@ -80,6 +80,10 @@ for o, a in opts:
         figwidth=int(a)
     elif o in ("--height"):
         figheight=int(a)
+    elif o in ("--nrows"):
+        nrows=int(a)
+    elif o in ("--ncols"):
+        ncols=int(a)
     elif o in ("--list"):
         print ''
         print '[available graph modules]'
