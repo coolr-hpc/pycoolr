@@ -255,8 +255,8 @@ while True:
     if pausesec > 0.0:
         plt.pause(pausesec)
 
-    print 'Profile Time [S]: all=%.2lf (query:%.2lf draw:%.2lf misc:%.2lf)' %\
+    print 'Profile Time [S]: %.2lf (%.2lf+%.2lf+%.2lf) / Queried %3d items from DB' %\
         (profile_t3-profile_t1+pausesec, profile_t2-profile_t1,\
-         profile_t3-profile_t2, pausesec)
+         profile_t3-profile_t2, pausesec, len(j))
 
 sys.exit(0)
