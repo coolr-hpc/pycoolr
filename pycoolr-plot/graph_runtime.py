@@ -57,14 +57,16 @@ class graph_runtime:
             #
             # graph handling : simple line
             #
+            pdata = self.es_lr
             ax = self.ax_es
 
             ax.cla()
             ax.set_xlim([t-gxsec, t])
+            ax.set_ylim([0, ncpus+2])
 
             x = pdata.getlistx()
             y = pdata.getlisty()
-            ax.plot(x,y, scaley=True,  label='', color='#556677')
+            ax.step(x,y, scaley=True,  label='', color='#556677')
 
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('# of Execution Streams')
