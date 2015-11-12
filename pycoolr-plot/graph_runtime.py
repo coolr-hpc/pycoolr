@@ -12,8 +12,8 @@ class graph_runtime:
         self.es_lr = listrotate2D(length=params['lrlen'])
 
         # axis for graph
-        self.ax = layout.getax()
         self.ax_es = layout.getax()
+        self.ax = layout.getax()
         # self.axbar = layout.getax()
 
     def update(self, params, sample):
@@ -66,7 +66,7 @@ class graph_runtime:
 
             x = pdata.getlistx()
             y = pdata.getlisty()
-            ax.step(x,y, scaley=True,  label='', color='#556677')
+            ax.step(x,y, scaley=True, label='', color='red', lw=1.5)
 
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('# of Execution Streams')
