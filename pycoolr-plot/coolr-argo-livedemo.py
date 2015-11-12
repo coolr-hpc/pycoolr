@@ -21,7 +21,7 @@ cfgfn='chameleon-argo-demo.cfg'
 appcfgfn=''
 outputfn='multinodes.json'
 targetnode=''
-enclave=''
+enclaves=[]
 fakemode=False
 figwidth=20
 figheight=12
@@ -40,7 +40,7 @@ def usage():
     print '--cfg fn : the main configuration (default: %s)' % cfgfn
     print '--outputfn fn : specify output fiflename (default: %s)' % outputfn
     print ''
-    print '--enclave name : enclave node name'
+    print '--enclaves CSV : enclave names. comma separated values without space'
     print '--node  name : target node the node power, temp, freq and app graphs'
     print ''
     print '--width int  : the width of the entire figure (default: %d)' % figwidth
@@ -54,11 +54,12 @@ def usage():
     print '--fake: generate fakedata instead of querying'
     print ''
     print '--list : list available graph module names'
-    print '--mods=CSV : specify a list of graph modules using comma separated values'
+    print '--mods CSV : graph modules. comma separated values wihtout space'
     print ''
 
 shortopt = "h"
-longopt = ['output=','node=', 'cfg=', 'enclave=', 'fake', 'width=', 'height=', 'list', 'mods=', 'ncols=', 'nrows=', 'appcfg=' ]
+# XXX: keep enclave= for compatibility
+longopt = ['output=','node=', 'cfg=', 'enclave=', 'enclaves=', 'fake', 'width=', 'height=', 'list', 'mods=', 'ncols=', 'nrows=', 'appcfg=' ]
 try:
     opts, args = getopt.getopt(sys.argv[1:],
                                shortopt, longopt)
@@ -79,8 +80,8 @@ for o, a in opts:
         cfgfn=a
     elif o in ("--appcfg"):
         appcfgfn=a
-    elif o in ("--enclave"):
-        enclave=a
+    elif o in ("--enclaves", "--enclave"):
+        enclaves=a.split(',')
     elif o in ("--fake"):
         fakemode=True
     elif o in ("--width"):
@@ -113,9 +114,9 @@ with open(cfgfn) as f:
 if len(targetnode) == 0 :
     targetnode = cfg['masternode']
     print 'Use %s as target node' % targetnode
-if len(enclave) == 0:
-    enclave = cfg['masternode']
-    print 'Use %s as enclave' % enclave
+if len(enclaves) == 0:
+    enclaves = [cfg['masternode']]
+    print 'Use %s as enclave' % enclaves[0]
 
 if len(appcfgfn) > 0:
     with open(appcfgfn) as f:
@@ -131,7 +132,7 @@ if len(appcfgfn) > 0:
 if fakemode:
     import fakedata
     targetnode='v.node'
-    enclave = 'v.enclave'
+    enclaves = ['v.enclave.1', 'v.enclave.2']
     info = json.loads(fakedata.gen_info(targetnode))
 else:
     info = querydataj("%s --info" % cfg['querycmd'])[0]
@@ -166,7 +167,7 @@ params['gxsec'] = gxsec
 params['cur'] = 0  # this will be updated
 params['pkgcolors'] = [ 'blue', 'green' ] # for now
 params['targetnode'] = targetnode
-params['enclave'] = enclave
+params['enclaves'] = enclaves
 
 
 #

@@ -76,6 +76,27 @@ def gen_rapl(node):
     # "energy": {"p0": 34, "p1": 34, "p0/dram": 25, "p1/dram": 25},
     return buf
 
+
+def gen_enclave(node, off):
+    t = time.time()
+    buf  = '{'
+    buf += '"node":"%s",' % node
+    buf += '"sample":"energy",'
+    buf += '"time":%lf,' % t
+    buf += '"powercap":{"p0":120.0,"p1":120.0,"p0/dram":0.0,"p1/dram":0.0},'
+    p1=r.random()*60.0 + 50 + off
+    p2=r.random()*60.0 + 60 + off
+    #if r.random() < 0.1:
+    #p2 = -100
+    p1d=r.random()*20.0 + 10
+    p2d=r.random()*20.0 + 10
+    buf += '"power":{"total":%.1lf,"p0":%.1lf,"p1":%.1lf,"p0/dram":%.1lf,"p1/dram":%.1lf}}' %\
+           (p1+p2, p1, p2, p1d, p2d)
+
+    # "energy": {"p0": 34, "p1": 34, "p0/dram": 25, "p1/dram": 25},
+    return buf
+
+
 def gen_mean_std(node,sample):
     t = time.time()
     buf  = '{'
@@ -129,10 +150,10 @@ gen_freq.cnt = 0
 
 def queryfakedataj():
     node="v.node"
-    enclave="v.enclave"
     ret = []
     ba = [ gen_info(node),
-           gen_rapl(enclave),
+           gen_enclave("v.enclave.1", 0),
+           gen_enclave("v.enclave.2", -30),
            gen_rapl(node),
            gen_mean_std(node,"temp"),
            gen_freq(node),
@@ -146,17 +167,6 @@ def queryfakedataj():
 
 if __name__ == '__main__':
 
-    node="v.node"
-    print
-    print json.loads(gen_info(node))
-    print
-    print json.loads(gen_argobots(node))
-    print
-    print json.loads(gen_application(node))
-    print
-    print json.loads(gen_rapl(node))
-    print
-    print json.loads(gen_freq(node))
-    print
-    print json.loads(gen_mean_std(node, "temp"))
-    print
+    j = queryfakedataj()
+    for e in j:
+        print e
