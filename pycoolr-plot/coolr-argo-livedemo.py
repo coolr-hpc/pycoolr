@@ -16,7 +16,7 @@ from clr_utils import *
 
 # default values
 
-modnames = ['runtime', 'application', 'power', 'temp', 'freq', 'enclave']
+modnames = ['enclave', 'power', 'temp', 'runtime', 'freq', 'application']
 cfgfn='chameleon-argo-demo.cfg'
 appcfgfn=''
 outputfn='multinodes.json'
@@ -25,7 +25,7 @@ enclaves=[]
 fakemode=False
 figwidth=20
 figheight=12
-ncols=4
+ncols=3
 nrows=3
 intervalsec=1.0
 
