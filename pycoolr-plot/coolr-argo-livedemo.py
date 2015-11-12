@@ -211,7 +211,7 @@ for k in modnames:
     c = getattr(m, name)
     modulelist.append( c(params, layout) )
 
-fig.tight_layout(pad=2.5) # w_pad=1.0, h_pad=2.0
+fig.tight_layout(pad=3.2) # w_pad=1.0, h_pad=2.0
 
 #
 #
