@@ -23,7 +23,7 @@ def gen_info(node):
     return buf
 
 def gen_argobots(node):
-    n = 20
+    n = int(r.random()*10) + 20
     t = time.time()
     buf  = '{'
     buf += '"time":%lf,' % t
