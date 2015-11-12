@@ -18,6 +18,7 @@ class graph_application:
         print 'samples', params['cfg']['appsamples']
 
         self.titles = ('Node Performance', 'Node Power Efficiency', 'Application Performance')
+        self.colors = ('green', 'red', 'blue')
 
         self.data_lr = [listrotate2D(length=params['lrlen']) for i in range(self.ngraphs)]
         self.ax = [layout.getax() for i in range(self.ngraphs)]
@@ -52,7 +53,7 @@ class graph_application:
                 x = pdata.getlistx()
                 y = pdata.getlisty()
 
-                ax.plot(x,y, scaley=True, label='', color='#222255')
+                ax.plot(x,y, scaley=True, label='', color=self.colors[i], lw=1.2)
                 #ax.bar(x, y, width = .6, edgecolor='none', color='#77bb88' )
                 #ax.plot(x,y, 'ro', scaley=True, label='')
 
