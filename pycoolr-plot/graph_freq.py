@@ -49,6 +49,6 @@ class graph_freq:
 
             self.ax.set_xlabel('Time [S]')
             self.ax.set_ylabel('Active Frequency [GHz]')
-            self.ax.set_title('Frequency: %s' % params['targetnode'] )
+            self.ax.set_title('Node Frequency (%s)' % params['targetnode'] )
 
             self.ax.legend(loc='lower left', prop={'size':9})

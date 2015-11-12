@@ -51,7 +51,7 @@ class graph_runtime:
 
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('# of Work Units')
-            ax.set_title('Argobots: %s' % params['targetnode'])
+            ax.set_title('Argobots: Avg. # of WUs/ES (%s)' % params['targetnode'])
             # self.ax.legend(loc='lower left', prop={'size':9})
 
             #
@@ -70,7 +70,7 @@ class graph_runtime:
 
             ax.set_xlabel('Time [S]')
             ax.set_ylabel('# of Execution Streams')
-            ax.set_title('Argobots: %s' % params['targetnode'])
+            ax.set_title('Argobots: # of ESs (%s)' % params['targetnode'])
 
             #
             # graph handling : bar

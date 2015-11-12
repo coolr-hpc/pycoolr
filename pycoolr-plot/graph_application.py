@@ -17,6 +17,7 @@ class graph_application:
         self.ngraphs = len(params['cfg']['appsamples'])
         print 'samples', params['cfg']['appsamples']
 
+        self.titles = ('Node Performance', 'Node Power Efficiency', 'Application Performance')
 
         self.data_lr = [listrotate2D(length=params['lrlen']) for i in range(self.ngraphs)]
         self.ax = [layout.getax() for i in range(self.ngraphs)]
@@ -58,7 +59,7 @@ class graph_application:
                 ax.set_xlabel('Time [S]')
                 ax.set_ylabel(label)
 
-                ax.set_title('%s: %s' % (params['cfg']['appname'], params['targetnode']) )
+                ax.set_title('%s: %s (%s)' % (params['cfg']['appname'], self.titles[i], params['targetnode']) )
 
         else:
             t = sample['time'] - params['ts']
@@ -66,5 +67,5 @@ class graph_application:
 
             for i in range(self.ngraphs):
                 self.ax[i].set_xlim([t-gxsec, t])
-                self.ax[i].set_title('%s: %s' % (params['cfg']['appname'], params['targetnode']) )
+                self.ax[i].set_title('%s: %s (%s)' % (params['cfg']['appname'], self.titles[i], params['targetnode']) )
 
