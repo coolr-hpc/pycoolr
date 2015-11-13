@@ -12,7 +12,8 @@ class graph_enclave:
 
         # multiple lines in one graph
         self.ax = layout.getax()
-        
+        self.ytop = 1
+
     def update(self, params, sample):
         if not sample['node'] in params['enclaves']:
                    return
@@ -40,6 +41,13 @@ class graph_enclave:
 
         ax.cla()
         ax.set_xlim([t-gxsec, t])
+
+        for i in range(self.n_enclaves):
+            ymax = self.data_lr[i].getmaxy()
+            if ymax > self.ytop:
+                self.ytop = ymax * 1.1
+
+        ax.set_ylim([0, self.ytop])
 
         for i in range(self.n_enclaves):
             x = self.data_lr[i].getlistx()
