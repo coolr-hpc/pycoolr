@@ -97,6 +97,12 @@ class listrotate2D:
         if self.pos == 0:
             return self.o
         return self.o[self.pos:] + self.o[0:self.pos]
+
+    def getmaxy(self):
+        if np.all(np.isnan(self.y)):
+            return 0.0
+        else :
+            return np.nanmax(self.y)
     
 if __name__ == '__main__':
 
