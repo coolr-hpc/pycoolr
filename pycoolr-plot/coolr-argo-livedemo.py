@@ -154,8 +154,8 @@ cmd = cfg['dbquerycmd'] # command to query the sqlite DB
 
 lastdbid=0 # this is used to keep track the DB records
 npkgs=info['npkgs']
-lrlen=120  # to option
-gxsec=lrlen # graph x-axis sec
+lrlen=200  # to option
+gxsec=120 # graph x-axis sec
 
 #
 #
