@@ -27,9 +27,9 @@ class graph_runtime:
 
             num_es = sample['num_es']
             tmpy = [ 0.0 for i in range(ncpus) ]
-            for i in range(num_es):
-                tmpy[i] += sample['num_threads']['es%d'%i]
-                tmpy[i] += sample['num_tasks']['es%d'%i]
+            for i, k in enumerate(sample['num_threads']):
+                tmpy[i] += sample['num_threads'][k]
+                tmpy[i] += sample['num_tasks'][k]
 
             self.runtime_lr.add(t, np.mean(tmpy), np.std(tmpy))
             self.es_lr.add(t, num_es)
