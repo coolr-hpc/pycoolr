@@ -151,8 +151,7 @@ gen_freq.cnt = 0
 def queryfakedataj():
     node="v.node"
     ret = []
-    ba = [ gen_info(node),
-           gen_enclave("v.enclave.1", 0),
+    ba = [ gen_enclave("v.enclave.1", 0),
            gen_enclave("v.enclave.2", -30),
            gen_rapl(node),
            gen_mean_std(node,"temp"),
