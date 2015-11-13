@@ -22,6 +22,7 @@ class graph_application:
 
         self.data_lr = [listrotate2D(length=params['lrlen']) for i in range(self.ngraphs)]
         self.ax = [layout.getax() for i in range(self.ngraphs)]
+        self.ytop = [1 for i in range(self.ngraphs)]
 
     def update(self, params, sample):
         if self.ngraphs == 0:
@@ -53,7 +54,14 @@ class graph_application:
                 x = pdata.getlistx()
                 y = pdata.getlisty()
 
-                ax.plot(x,y, scaley=True, label='', color=self.colors[i], lw=1.2)
+                ymax = pdata.getmaxy()
+                if ymax > self.ytop[i]:
+                    self.ytop[i] = ymax * 1.1
+
+                ax.set_ylim([0, self.ytop[i]])
+                ax.ticklabel_format(axis='y', style='sci', scilimits=(1,0))
+
+                ax.plot(x, y, label='', color=self.colors[i], lw=1.2)
                 #ax.bar(x, y, width = .6, edgecolor='none', color='#77bb88' )
                 #ax.plot(x,y, 'ro', scaley=True, label='')
 
