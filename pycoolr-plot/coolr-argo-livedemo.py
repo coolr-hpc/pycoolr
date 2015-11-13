@@ -113,10 +113,12 @@ with open(cfgfn) as f:
 
 if len(targetnode) == 0 :
     targetnode = cfg['masternode']
-    print 'Use %s as target node' % targetnode
 if len(enclaves) == 0:
-    enclaves = [cfg['masternode']]
-    print 'Use %s as enclave' % enclaves[0]
+    enclaves = cfg['enclaves']
+
+print 'masternode:', cfg['masternode']
+print 'targetnode:', targetnode
+print 'enclaves:', enclaves
 
 if len(appcfgfn) > 0:
     with open(appcfgfn) as f:
