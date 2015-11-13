@@ -59,6 +59,6 @@ class graph_power:
                 pkgid += 1
 
             self.ax.legend(loc='lower left', prop={'size':9})
-            self.ax.set_xlabel('Time [S]')
+            self.ax.set_xlabel('Time [s]')
             self.ax.set_ylabel('Power [W]')
             self.ax.set_title("Node Power (%s)" % params['targetnode'])

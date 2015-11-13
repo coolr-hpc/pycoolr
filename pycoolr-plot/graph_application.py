@@ -57,7 +57,7 @@ class graph_application:
                 #ax.bar(x, y, width = .6, edgecolor='none', color='#77bb88' )
                 #ax.plot(x,y, 'ro', scaley=True, label='')
 
-                ax.set_xlabel('Time [S]')
+                ax.set_xlabel('Time [s]')
                 ax.set_ylabel(label)
 
                 ax.set_title('%s: %s (%s)' % (params['cfg']['appname'], self.titles[i], params['targetnode']) )

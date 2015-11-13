@@ -49,7 +49,7 @@ class graph_runtime:
             ax.plot(x,y, scaley=True,  label='')
             ax.errorbar(x,y,yerr=e, lw=.2, label = '')
 
-            ax.set_xlabel('Time [S]')
+            ax.set_xlabel('Time [s]')
             ax.set_ylabel('# of Work Units')
             ax.set_title('Argobots: Avg. # of WUs/ES (%s)' % params['targetnode'])
             # self.ax.legend(loc='lower left', prop={'size':9})
@@ -68,7 +68,7 @@ class graph_runtime:
             y = pdata.getlisty()
             ax.step(x,y, scaley=True, label='', color='red', lw=1.5)
 
-            ax.set_xlabel('Time [S]')
+            ax.set_xlabel('Time [s]')
             ax.set_ylabel('# of Execution Streams')
             ax.set_title('Argobots: # of ESs (%s)' % params['targetnode'])
 

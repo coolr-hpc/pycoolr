@@ -47,7 +47,7 @@ class graph_freq:
                 self.ax.errorbar(x,y,yerr=e, lw=.2, color=params['pkgcolors'][pkgid], label = '')
                 pkgid += 1
 
-            self.ax.set_xlabel('Time [S]')
+            self.ax.set_xlabel('Time [s]')
             self.ax.set_ylabel('Active Frequency [GHz]')
             self.ax.set_title('Node Frequency (%s)' % params['targetnode'] )
 

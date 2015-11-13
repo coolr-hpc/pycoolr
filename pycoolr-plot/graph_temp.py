@@ -45,7 +45,7 @@ class graph_temp:
                 self.ax.errorbar(x,y,yerr=e, lw=.2, color=params['pkgcolors'][pkgid], label = '')
                 pkgid += 1
 
-            self.ax.set_xlabel('Time [S]')
+            self.ax.set_xlabel('Time [s]')
             self.ax.set_ylabel('Core temperature [C]')
             self.ax.set_title('Node Temperature (%s)' % params['targetnode'])
 

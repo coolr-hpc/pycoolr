@@ -47,6 +47,6 @@ class graph_enclave:
             self.ax.plot(x, y, label=params['enclaves'][i], color=colors[i])
 
         self.ax.legend(loc='lower left', prop={'size':9})
-        self.ax.set_xlabel('Time [S]')
+        self.ax.set_xlabel('Time [s]')
         self.ax.set_ylabel('Power [W]')
         self.ax.set_title("Enclave Power")
