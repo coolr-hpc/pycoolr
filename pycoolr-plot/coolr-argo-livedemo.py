@@ -237,7 +237,10 @@ while True:
     profile_t2 = time.time()
     for e in j:
         print >>logf, json.dumps(e)
-        if not e.has_key('node'):
+        if not (e.has_key('node') and\
+                e.has_key('sample') and\
+                e.has_key('time') ):
+            print 'Ignore this invalid sample:', json.dumps(e)
             continue
 
         if params['ts'] == 0:
