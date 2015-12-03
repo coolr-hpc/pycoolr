@@ -16,18 +16,25 @@ from clr_utils import *
 
 # default values
 
-modnames = ['enclave', 'power', 'temp', 'runtime', 'freq', 'application']
 cfgfn='chameleon-argo-demo.cfg'
+fakemode=False
 appcfgfn=''
-outputfn='multinodes.json'
 targetnode=''
 enclaves=[]
-fakemode=False
-figwidth=20
-figheight=12
-ncols=3
-nrows=3
 intervalsec=1.0
+
+# here is the priority: options > cfg > default
+# cmd options are the highest priority
+
+cfg = {}
+
+cfg["outputfn"] = 'multinodes.json'
+cfg["modnames"] = ['enclave', 'power', 'temp', 'runtime', 'freq', 'application']
+cfg["figwidth"] = 20
+cfg["figheight"] = 12
+cfg["ncols"] = 3
+cfg["nrows"] = 3
+
 
 def usage():
     print ''
@@ -68,12 +75,11 @@ except getopt.GetoptError, err:
     usage()
     sys.exit(1)
 
+ocfg = {}
 for o, a in opts:
     if o in ('-h'):
         usage()
         sys.exit(0)
-    elif o in ("--output"):
-        outputfn=a
     elif o in ("--node"):
         targetnode=a
     elif o in ("--cfg"):
@@ -84,32 +90,40 @@ for o, a in opts:
         enclaves=a.split(',')
     elif o in ("--fake"):
         fakemode=True
+    elif o in ("--output"):
+        ocfg["outputfn"]=a
     elif o in ("--width"):
-        figwidth=int(a)
+        ocfg["figwidth"] = int(a)
     elif o in ("--height"):
-        figheight=int(a)
+        ocfg["figheight"] = int(a)
     elif o in ("--nrows"):
-        nrows=int(a)
+        ocfg["nrows"]=int(a)
     elif o in ("--ncols"):
-        ncols=int(a)
+        ocfg["ncols"]=int(a)
     elif o in ("--list"):
         print ''
         print '[available graph modules]'
         print ''
-        for i in modnames:
+        for i in cfg["modnames"]:
             print i
         print ''
         print ''
         sys.exit(0)
     elif o in ("--mods"):
-        modnames = a.split(",")
+        ocfg["modnames"] = a.split(",")
 
 #
 # load config files
 #
 
 with open(cfgfn) as f:
-    cfg = json.load(f)
+    cfgtmp = json.load(f)
+    # override if cfg defines any
+    for k in cfgtmp.keys():
+        cfg[k] = cfgtmp[k]
+    # override if specifed as cmd option
+    for k in ocfg.keys():
+        cfg[k] = ocfg[k]
 
 if len(targetnode) == 0 :
     targetnode = cfg['masternode']
@@ -144,9 +158,9 @@ else:
 #
 #
 try:
-    logf = open(outputfn, 'w', 0) # unbuffered write
+    logf = open(cfg["outputfn"], 'w', 0) # unbuffered write
 except:
-    print 'unable to open', outputfn
+    print 'unable to open', cfg["outputfn"]
 
 print >>logf, json.dumps(info)
 
@@ -161,7 +175,6 @@ gxsec=120 # graph x-axis sec
 #
 #
 params = {}  # graph params XXX: extend for multinode
-params['outputfn'] = outputfn
 params['cfg'] = cfg
 params['info'] = info
 params['lrlen'] = lrlen
@@ -181,7 +194,7 @@ import matplotlib.animation as manimation
 matplotlib.rcParams.update({'font.size': 12})
 from clr_matplot_graphs import *
 
-fig = plt.figure( figsize=(figwidth,figheight) )
+fig = plt.figure( figsize=(cfg["figwidth"],cfg["figheight"]) )
 fig.canvas.set_window_title('COOLR live demo tool')
 
 plt.ion()
@@ -198,7 +211,7 @@ class layoutclass:
         self.idx += 1
         return ax
 
-layout = layoutclass(nrows, ncols)
+layout = layoutclass(cfg["nrows"], cfg["ncols"])
 
 #
 # register  new graph modules
@@ -207,7 +220,7 @@ layout = layoutclass(nrows, ncols)
 
 modulelist = [] # a list of graph modules
 
-for k in modnames:
+for k in cfg["modnames"]:
     name='graph_%s' % k
     m = __import__(name)
     c = getattr(m, name)

@@ -25,7 +25,7 @@ class graph_power:
                 tmppow = sample['power']['p%d'%pkgid]
                 if tmppow < 0:
                     print
-                    print 'WARNING: power is negative. Check %s' % (tmppow, params['outputfn'])
+                    print 'WARNING: power is negative. Check %s' % (tmppow, params['cfg']['outputfn'])
                     print
                     return
                 tmplim = sample['powercap']['p%d'%pkgid]
