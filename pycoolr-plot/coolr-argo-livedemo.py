@@ -114,7 +114,8 @@ with open(cfgfn) as f:
 if len(targetnode) == 0 :
     targetnode = cfg['masternode']
 if len(enclaves) == 0:
-    enclaves = cfg['enclaves']
+    if cfg.has_key('enclaves'):
+        enclaves = cfg['enclaves']
 
 print 'masternode:', cfg['masternode']
 print 'targetnode:', targetnode
@@ -137,8 +138,7 @@ if fakemode:
     enclaves = ['v.enclave.1', 'v.enclave.2']
     info = json.loads(fakedata.gen_info(targetnode))
 else:
-    info = querydataj("%s --info" % cfg['querycmd'])[0]
-
+    info = querydataj(cfg['queryinfocmd'])[0]
     
 #
 #
@@ -150,9 +150,9 @@ except:
 
 print >>logf, json.dumps(info)
 
-cmd = cfg['dbquerycmd'] # command to query the sqlite DB
+querycmds = cfg['querycmds']
 
-lastdbid=0 # this is used to keep track the DB records
+
 npkgs=info['npkgs']
 lrlen=200  # to option
 gxsec=120 # graph x-axis sec
@@ -219,6 +219,7 @@ fig.tight_layout(pad=3.2) # w_pad=1.0, h_pad=2.0
 #
 #
 
+lastdbid=0 # this is used to keep track the DB records
 params['ts'] = 0
 
 while True:
@@ -227,12 +228,17 @@ while True:
     if fakemode:
         j = fakedata.queryfakedataj()
     else:
-        if lastdbid > 0:
-            j = querydataj("%s --gtidx=%d" % (cmd, lastdbid))
-        else:
-            j = querydataj(cmd)
-        if len(j) > 0:
-            lastdbid = int(j[-1]['dbid'])
+        for k in querycmds:
+            cmd = cfg[k]
+            if cmd == 'dbquerycmd':
+                if lastdbid > 0:
+                    j = querydataj("%s --gtidx=%d" % (cmd, lastdbid))
+                else:
+                    j = querydataj(cmd)
+                if len(j) > 0:
+                    lastdbid = int(j[-1]['dbid'])
+            else:
+                j = querydataj(cmd)
 
     profile_t2 = time.time()
     for e in j:
