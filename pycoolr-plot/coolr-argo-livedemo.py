@@ -45,16 +45,16 @@ def usage():
     print '--interval sec: specify the interval in sec. no guarantee. (default: %.1f)' % intervalsec
     print ''
     print '--cfg fn : the main configuration (default: %s)' % cfgfn
-    print '--outputfn fn : specify output fiflename (default: %s)' % outputfn
+    print '--outputfn fn : specify output fiflename (default: %s)' % cfg["outputfn"]
     print ''
     print '--enclaves CSV : enclave names. comma separated values without space'
     print '--node  name : target node the node power, temp, freq and app graphs'
     print ''
-    print '--width int  : the width of the entire figure (default: %d)' % figwidth
-    print '--height int : the height of the entire figure (default: %d)' % figheight
+    print '--width int  : the width of the entire figure (default: %d)' % cfg["figwidth"]
+    print '--height int : the height of the entire figure (default: %d)' % cfg["figheight"]
     print ''
-    print '--ncols : the number of columns (default: %s)' % ncols
-    print '--nrows : the number of rows (default: %s)' % nrows
+    print '--ncols : the number of columns (default: %s)' % cfg["ncols"]
+    print '--nrows : the number of rows (default: %s)' % cfg["nrows"]
     print ''
     print '--appcfg cfg : add-on config for application specific values'
     print ''
