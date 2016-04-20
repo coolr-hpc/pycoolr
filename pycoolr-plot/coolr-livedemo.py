@@ -16,12 +16,12 @@ from clr_utils import *
 
 # default values
 
-cfgfn='chameleon-argo-demo.cfg'
-fakemode=False
-appcfgfn=''
-targetnode=''
-enclaves=[]
-intervalsec=1.0
+cfgfn = ''
+fakemode = False
+appcfgfn = ''
+targetnode = ''
+enclaves = []
+intervalsec = 1.0
 
 # here is the priority: options > cfg > default
 # cmd options are the highest priority
@@ -38,13 +38,12 @@ cfg["nrows"] = 3
 
 def usage():
     print ''
-    print 'Usage: %s [options]' % sys.argv[0]
+    print 'Usage: %s [options] config_file' % sys.argv[0]
     print ''
     print '[options]'
     print ''
     print '--interval sec: specify the interval in sec. no guarantee. (default: %.1f)' % intervalsec
     print ''
-    print '--cfg fn : the main configuration (default: %s)' % cfgfn
     print '--outputfn fn : specify output fiflename (default: %s)' % cfg["outputfn"]
     print ''
     print '--enclaves CSV : enclave names. comma separated values without space'
@@ -58,15 +57,13 @@ def usage():
     print ''
     print '--appcfg cfg : add-on config for application specific values'
     print ''
-    print '--fake: generate fakedata instead of querying'
-    print ''
     print '--list : list available graph module names'
     print '--mods CSV : graph modules. comma separated values wihtout space'
     print ''
 
 shortopt = "h"
 # XXX: keep enclave= for compatibility
-longopt = ['output=','node=', 'cfg=', 'enclave=', 'enclaves=', 'fake', 'width=', 'height=', 'list', 'mods=', 'ncols=', 'nrows=', 'appcfg=' ]
+longopt = ['output=','node=', 'enclave=', 'enclaves=', 'width=', 'height=', 'list', 'mods=', 'ncols=', 'nrows=', 'appcfg=' ]
 try:
     opts, args = getopt.getopt(sys.argv[1:],
                                shortopt, longopt)
@@ -82,14 +79,10 @@ for o, a in opts:
         sys.exit(0)
     elif o in ("--node"):
         targetnode=a
-    elif o in ("--cfg"):
-        cfgfn=a
     elif o in ("--appcfg"):
         appcfgfn=a
     elif o in ("--enclaves", "--enclave"):
         enclaves=a.split(',')
-    elif o in ("--fake"):
-        fakemode=True
     elif o in ("--output"):
         ocfg["outputfn"]=a
     elif o in ("--width"):
@@ -112,18 +105,36 @@ for o, a in opts:
     elif o in ("--mods"):
         ocfg["modnames"] = a.split(",")
 
-#
-# load config files
-#
-
-with open(cfgfn) as f:
-    cfgtmp = json.load(f)
-    # override if cfg defines any
-    for k in cfgtmp.keys():
-        cfg[k] = cfgtmp[k]
-    # override if specifed as cmd option
-    for k in ocfg.keys():
-        cfg[k] = ocfg[k]
+if len(args) < 1:
+    print ''
+    print 'No config file is specified.  Enabled the fake mode.'
+    print ''
+    cfg["masternode"] = "frontend"
+    cfg["drawexternal"] = "no"
+    cfg["drawacpipwr"] = "no"
+    cfg["dramrapl"] = "yes"
+    cfg["tempmax"] = 90
+    cfg["tempmax"] = 40
+    cfg["freqmin"] = 0.8
+    cfg["freqmax"] = 3.1
+    cfg["freqnorm"] = 2.3
+    cfg["pwrmax"] = 150
+    cfg["pwrmin"] = 5
+    cfg["acpwrmax"] = 430
+    fakemode = True
+else:
+    cfgfn = args[0]
+    #
+    # load config files
+    #
+    with open(cfgfn) as f:
+        cfgtmp = json.load(f)
+        # override if cfg defines any
+        for k in cfgtmp.keys():
+            cfg[k] = cfgtmp[k]
+        # override if specifed as cmd option
+        for k in ocfg.keys():
+            cfg[k] = ocfg[k]
 
 if len(targetnode) == 0 :
     targetnode = cfg['masternode']
@@ -164,7 +175,8 @@ except:
 
 print >>logf, json.dumps(info)
 
-querycmds = cfg['querycmds']
+if not fakemode:
+    querycmds = cfg['querycmds']
 
 
 npkgs=info['npkgs']
