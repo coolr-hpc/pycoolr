@@ -33,7 +33,7 @@ cfg["modnames"] = ['enclave', 'power', 'temp', 'runtime', 'freq', 'application']
 cfg["figwidth"] = 20
 cfg["figheight"] = 12
 cfg["ncols"] = 3
-cfg["nrows"] = 3
+cfg["nrows"] = 2
 
 
 def usage():
