@@ -113,6 +113,7 @@ class nodeconfig :
 
         # assume that all cpu have the same setting for this experiment
         self.driver = ''
+        self.freqdriver = ''
         d = '/sys/devices/system/cpu/cpu0/cpufreq'
         if os.path.exists(d):
             self.freqdriver = 'acpi_cpufreq'
