@@ -1,4 +1,1 @@
-- ctl_rapl: clean up the total energy tracking code
-- ctl_nodeinfo: hyperthread detection
-
-
+- ctl_rapl: add DRAM max

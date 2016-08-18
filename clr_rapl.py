@@ -9,6 +9,7 @@
 
 import os, sys, re, time
 
+
 class rapl_reader:
     dryrun = False
     rapldir='/sys/devices/virtual/powercap/intel-rapl'
@@ -187,8 +188,7 @@ class rapl_reader:
         e = self.read_energy_acc()
         self.stop_time = time.time()
 
-
-    def sample_and_json(self, label = "", accflag = False):
+    def sample_and_json(self, label = "", accflag = False, node = ""):
         if not self.initialized():
             return
 
@@ -205,6 +205,8 @@ class rapl_reader:
 
         # constructing a json output
         s  = '{"sample":"energy","time":%.3f' % (e['time'])
+        if len(node) > 0:
+            s += ',"node":"%s"' % node
         if len(label) > 0:
             s += ',"label":"%s"' % label
         s += ',"energy":{'

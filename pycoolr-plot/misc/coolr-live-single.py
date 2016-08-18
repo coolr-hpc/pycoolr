@@ -15,23 +15,32 @@ import pylab
 from collections import deque
 import matplotlib.cm as cm
 
+#enable_query_db = True
+enable_query_db = False
+
 
 if len(sys.argv) < 2:
-    print 'Usage: demo.py config'
+    print 'Usage: pycoolr-plot.py config [outputfn]'
     sys.exit(1)
     
 configfile = sys.argv[1]
+outputfn = 'plotdata.json'
+if len(sys.argv) > 2:
+    outputfn = sys.argv[2]
 
 with open(configfile) as f:
     config = json.load(f)
 
 print 'Config :', configfile
-    
+print 'Output :', outputfn
 
 plotapp = False
-#maxpoints = 360
-maxpoints = 120
-interval = 1
+maxpoints = 360
+#maxpoints = 120
+#maxpoints = 240
+interval = 0.1
+# technically 'interval' is the wait time after drawing
+# since drawing takes more than 1sec now, setting a smaller number is ok
 
 #
 #
@@ -46,7 +55,7 @@ plt.ion()  # turn interactive mode on
 plt.show()
 
 try:
-    logf = open( 'data.log', 'w', 0 ) # unbuffered write
+    logf = open( outputfn, 'w', 0 ) # unbuffered write
 except:
     print 'unable to open data.log'
 
@@ -70,11 +79,40 @@ def querydataj(cmd=''):
         l = f.readline()
         if not l:
             break
-        ret.append(json.loads(l))
+        try:
+            j = json.loads(l)
+        except ValueError, e:
+            break
+        ret.append(j)
         logf.write(l)
     f.close()
 
     return ret
+
+# only enable_query_db
+def dbquerydataj(lastt):
+    f = os.popen("%s %s" % (config["dbquerycmd"],lastt), "r")
+    ret = [] # return an array of dict objects
+
+    while True:
+        l = f.readline()
+        if not l:
+            break
+        try:
+            j = json.loads(l)
+        except ValueError, e:
+            break
+        # workaround: beacon uses wrong tag
+        d = {}
+        d["sample"] = "nodepwr"
+        d["time"] = j["time"]
+        d["watts"] = j["watts"]
+        ret.append(d)
+        logf.write(json.dumps(d) + "\n")
+    f.close()
+
+    return ret
+
 
 
 def queryexternalj(cmd=''):
@@ -105,6 +143,10 @@ uptimeq = deque(nans)
 
 #
 acpwrq = deque(nans)
+
+if enable_query_db:
+    nodepwrq = deque(nans)
+    lastime_qeury_db = 0
 
 # 
 meanqs  = [ deque(nans) for i in range(0,npkgs) ]
@@ -157,6 +199,8 @@ while True:
     #
     # querying
     #
+    profile_st = time.time()
+
     
     sample = querydataj("--sample")
     s_temp = sample[0]
@@ -174,6 +218,15 @@ while True:
     uptimeq.popleft()
     uptimeq.append( rel_t )
     # print uptimeq
+
+    if enable_query_db:
+        dbj = dbquerydataj(lastime_qeury_db)
+        lastime_qeury_db = dbj[-1]["time"]
+        e = dbj[-1]
+        p = e['watts']
+        print p, type(p)
+        nodepwrq.popleft()
+        nodepwrq.append(p) 
 
     totalpower=0.0
 
@@ -236,6 +289,9 @@ while True:
 
     prev_t = cur_t
 
+    profile_t1 = time.time()
+
+
     # update the plot
     plt.clf() 
 
@@ -250,8 +306,8 @@ while True:
     #
     plt.subplot(2,4,subplotidx)
     subplotidx = subplotidx +1
-    plt.axis([rel_t - maxpoints*interval, rel_t, config["mintemp"], config["maxtemp"]]) # [xmin,xmax,ymin,ymax]
-#    plt.axhspan( 70, maxtemp, facecolor='#eeeeee', alpha=0.5)
+    plt.axis([rel_t - maxpoints*interval, rel_t, config["tempmin"], config["tempmax"]]) # [xmin,xmax,ymin,ymax]
+#    plt.axhspan( 70, tempmax, facecolor='#eeeeee', alpha=0.5)
 
     for pkgid in range(0, npkgs):
         l_meanqs=list(meanqs[pkgid])
@@ -283,21 +339,30 @@ while True:
     #
     plt.subplot(2,4,subplotidx)
     subplotidx = subplotidx + 1
-    plt.axis([rel_t - maxpoints*interval, rel_t, config["pwrmin"], config["pwrmax"]]) # [xmin,xmax,ymin,ymax]
-#    plt.axhspan( 115, 120, facecolor='#eeeeee', alpha=0.5)
+    if enable_query_db:
+        plt.axis([rel_t - maxpoints*interval, rel_t, 20, config["acpwrmax"]]) # [xmin,xmax,ymin,ymax]
 
-    l_uptime=list(uptimeq)
-    for pkgid in range(0, npkgs):
-        plt.plot(l_uptime, list(plimqs[pkgid]), scaley=False, color='red' )
-        l_powerqs=list(powerqs[pkgid])
-        plt.plot(l_uptime, l_powerqs, scaley=False, label='PKG%d'%pkgid, color=cnames[pkgid] )
+        l_uptime=list(uptimeq)
+        l_nodepwrq=list(nodepwrq)
+        plt.plot(l_uptime, l_nodepwrq, scaley=False)
 
-        if config["dramrapl"] == "yes": 
-            l_drampowerqs=list(drampowerqs[pkgid])
-            plt.plot(l_uptime, l_drampowerqs, scaley=False, label='DRAM%d'%pkgid, color=cnames[pkgid], ls='-' )
+        plt.xlabel('Uptime [S]')
+        plt.ylabel('Nod RAPL Power [W]')
+    else: # coolrs.py
+        plt.axis([rel_t - maxpoints*interval, rel_t, config["pwrmin"], config["pwrmax"]]) # [xmin,xmax,ymin,ymax]
 
-    plt.xlabel('Uptime [S]')
-    plt.ylabel('RAPL Power [W]')
+        l_uptime=list(uptimeq)
+        for pkgid in range(0, npkgs):
+            plt.plot(l_uptime, list(plimqs[pkgid]), scaley=False, color='red' )
+            l_powerqs=list(powerqs[pkgid])
+            plt.plot(l_uptime, l_powerqs, scaley=False, label='PKG%d'%pkgid, color=cnames[pkgid] )
+
+            if config["dramrapl"] == "yes": 
+                l_drampowerqs=list(drampowerqs[pkgid])
+                plt.plot(l_uptime, l_drampowerqs, scaley=False, label='DRAM%d'%pkgid, color=cnames[pkgid], ls='-' )
+
+        plt.xlabel('Uptime [S]')
+        plt.ylabel('RAPL Power [W]')
 
     #
     #
@@ -319,7 +384,7 @@ while True:
     # XXX: quick dirty for now
     plt.subplot(2,4,subplotidx)
     subplotidx = subplotidx + 1
-    nbars = config["ncpu"]*4
+    nbars = info['ncpus']
     plt.axis([0, nbars , config["freqmin"], config["freqmax"]])
 
     offset = 0
@@ -385,7 +450,8 @@ while True:
     #
     # cmap
     #
-    for pkgid in range(0, 2): # this only works with dual sockets
+    if False:
+    #for pkgid in range(0, 2): # this only works with dual sockets
         plt.subplot(2,4,subplotidx+pkgid)
 
         pn = 'p%d' % pkgid
@@ -400,7 +466,7 @@ while True:
             A.append(tmp)
 
         ax = plt.gca()
-        cax = ax.imshow(A, cmap=cm.jet , vmin=config["mintemp"], vmax=config["maxtemp"] ,aspect=0.7, interpolation='none') # interpolation='nearest' 
+        cax = ax.imshow(A, cmap=cm.jet , vmin=config["tempmin"], vmax=config["tempmax"] ,aspect=0.7, interpolation='none') # interpolation='nearest' 
         cbar = fig.colorbar( cax )
         plt.xticks( [] )
         plt.yticks( [] )
@@ -430,30 +496,28 @@ while True:
     l=5
     plt.text( 0.1, ypos(l), 'Linux kernel : %s' % info['kernelversion'] )
     l += 1
-    plt.text( 0.1, ypos(l), 'Freq driver : %s' % info['freqdriver'] )
+    plt.text( 0.1, ypos(l), 'Freq. driver : %s' % info['freqdriver'] )
     l += 1
-# XXX
-#    plt.text( 0.1, ypos(l), 'Freq governor : %s' % info['cpufreq_governor'] )
-#    l += 1
-#    if info['cpufreq_cur_freq'] == turbofreq:
-#        plt.text( 0.1, ypos(l), 'Turboboost %.1f - %.1f GHz' % (freqnorm, freqmax) )
-#    else:
-#        plt.text( 0.1, ypos(l), 'Current freq. : %s Hz' % info['cpufreq_cur_freq'] )
+    plt.text( 0.1, ypos(l), 'MemoryKB : %s' % info['memoryKB'] )
+    l += 1
+    plt.text( 0.1, ypos(l), 'CPU model : %s' % info['cpumodel'] )
+    l += 1
+    plt.text( 0.1, ypos(l), '# of procs : %s' % info['ncpus'] )
+    l += 1
+    plt.text( 0.1, ypos(l), '# of pkgs : %s' % info['npkgs'] )
 
+    a = info['pkg0phyid']
+    ht = 'enabled'
+    if len(a) == len(set(a)):
+        ht = 'disabled'
     l += 1
-
+    plt.text( 0.1, ypos(l), 'Hyperthread : %s' % ht)
+        
     l += 1
-    plt.text( 0.1, ypos(l), 'Powewcap pkg0 : %d Watt' % s_powercap['p0'] )
+    plt.text( 0.1, ypos(l), 'Powercap pkg0 : %d Watt' % s_powercap['p0'] )
     l += 1
     plt.text( 0.1, ypos(l), 'Powercap pkg1 : %d Watt' % s_powercap['p1'] )
 
-    l += 1
-    l += 1
-    plt.text( 0.1, ypos(l), config["mdesc1"] )
-    l += 1
-    plt.text( 0.1, ypos(l), config["mdesc2"] )
-    l += 1
-    plt.text( 0.1, ypos(l), config["mdesc3"] )
     l += 1
 
     #
@@ -461,6 +525,15 @@ while True:
     fig.tight_layout()
 
     plt.draw()
-    time.sleep(interval-0.1)
+
+    profile_t2 = time.time()
+
+    time.sleep(interval)
+
+    profile_t3 = time.time()
+
+    print '%.2lf sec/loop (%.2lf %.2lf %.2lf)' %\
+        (profile_t3-profile_st, profile_t1-profile_st, profile_t2-profile_t1, profile_t3-profile_t2)
+
 
 sys.exit(0)

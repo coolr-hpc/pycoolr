@@ -5,7 +5,7 @@
 # Contact: Kazutomo Yoshii <ky@anl.gov>
 #
 
-import os, sys, re, time
+import os, sys, re, time, socket
 
 # local
 from clr_misc import *
@@ -84,14 +84,36 @@ class cputopology:
         self.detect()
 
 
-class osconfig :
 
-    def update(self):
+class nodeconfig :
+
+    def parse(self):
+        self.hostname = socket.gethostname()
+        # XXX: not sure this is unique
+        self.nodename = self.hostname.split('.')[0]
+
         tmp = readbuf( '/proc/version' )
         self.version = tmp.split()[2]
 
+        re_model = re.compile("^model\s+:\s+([0-9]+)")
+        self.cpumodel = -1
+        with open('/proc/cpuinfo') as f:
+            while True:
+                l = f.readline()
+                if not l:
+                    break
+                m = re_model.match(l)
+                if m:
+                    self.cpumodel = int(m.group(1))
+
+        self.memoryKB = -1
+        with open('/proc/meminfo') as f:
+            l = f.readline()
+            self.memoryKB = int(l.split()[1])
+
         # assume that all cpu have the same setting for this experiment
         self.driver = ''
+        self.freqdriver = ''
         d = '/sys/devices/system/cpu/cpu0/cpufreq'
         if os.path.exists(d):
             self.freqdriver = 'acpi_cpufreq'
@@ -119,38 +141,25 @@ class osconfig :
             self.policy = d + '/pstate_policy'
 
     def __init__ (self):
-        self.update()
+        self.parse()
 
-#
-# ad hoc implementation
-def readfreq():
-    ret = [0.0 for i in range(0,16)]
-    for i in range(0,16):
-        fn = '/var/tmp/amperf%d' % i
-        ret[i] = 1.2 # minimum freq if failed to retry
-        for retry in range(0,10):
-            try :
-                f = open(fn)
-                ret[i] = float(f.readline())
-                f.close()
-            except:
-                time.sleep(0.01)
-                continue
-            break
-
-    return ret
+        
 
 
-def  testosconfig():
+def  testnodeconfig():
     print '=== ', sys._getframe().f_code.co_name
 
-    oc = osconfig()
-    print oc.version
-    print oc.freqdriver
+    nc = nodeconfig()
+    print 'node: ', nc.nodename
+    print 'version: ', nc.version
+    print 'cpumodel: ', nc.cpumodel
+    print 'memoryKB: ', nc.memoryKB
+    print 'freqdriver: ', nc.freqdriver
     print
 
 def testcputopology():
     print '=== ', sys._getframe().f_code.co_name
+
     ct = cputopology()
     print
     print 'No. of online cpus: ', len(ct.onlinecpus)
@@ -159,7 +168,7 @@ def testcputopology():
         print 'pkg%d:' % p, len(ct.pkgcpus[p]), ct.pkgcpus[p]
         print '   cpuid:', 
         for cpuid in ct.pkgcpus[p]:
-            print ct.cpu2coreid[cpuid],
+            print ct.cpu2coreid[cpuid],ct.cpu2coreid[cpuid][1],
         print
     print
     for n in sorted(ct.nodecpus.keys()):
@@ -171,20 +180,12 @@ def testcputopology():
         print
     print
 
-def testfreq():
-    print '=== ', sys._getframe().f_code.co_name
-
-    freqs = readfreq()
-
-    print freqs[0:8]
-    print freqs[8:16]
-    
 
 if __name__ == '__main__':
 
-    testosconfig()
+    testnodeconfig()
 
     testcputopology()
 
-    # testfreq()
+
 

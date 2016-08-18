@@ -11,7 +11,7 @@
 # the following kernel modules are optional
 #
 # - acpi_power_meter
-# - amperf
+# - cpustat (coolr-hpc)
 #
 # written by Kazutomo Yoshii <ky@anl.gov>
 #
@@ -27,9 +27,15 @@ import keypress
 import clr_rapl
 import clr_hwmon
 import clr_nodeinfo
-import clr_amperf
+#import clr_amperf
+import clr_cpufreq
 
 from clr_misc import *
+
+#
+#
+
+debuglevel=0
 
 #
 #
@@ -48,46 +54,27 @@ def usage():
 
 class coolrmon_tracer:
     def sample_acpi(self, label):
-        if tr.acpi.initialized():
-            s = tr.acpi.sample_and_json()
+        if self.acpi.initialized():
+            s = self.acpi.sample_and_json(node=self.nc.nodename)
             self.logger(s)
 
     def sample_freq(self,label):
-        s = tr.amp.sample_and_json()
-        self.logger(s)
+        #s = self.amp.sample_and_json()
+        if self.freq.init:
+            s = self.freq.sample_and_json(node=self.nc.nodename)
+            self.logger(s)
 
     def sample_temp(self,label):
-        temp = self.ctr.readtempall()
-        # constructing a json output
-        # this should go to clr_hwmon
-        s  = '{"sample":"temp", "time":%.3f' % (time.time())
-        s += ',"label":"%s"' % label
-        for p in sorted(temp.keys()):
-            s += ',"p%d":{' % p
-
-            pstat = self.ctr.getpkgstats(temp, p)
-
-            s += '"mean":%.2lf ' % pstat[0]
-            s += ',"std":%.2lf ' % pstat[1]
-            s += ',"min":%.2lf ' % pstat[2]
-            s += ',"max":%.2lf ' % pstat[3]
-            
-            for c in sorted(temp[p].keys()):
-                s += ',"%s":%d' % (c, temp[p][c])
-            s += '}'
-        s += '}'
-
+        s = self.ctr.sample_and_json(node=self.nc.nodename)
         self.logger(s)
-
-        return temp
-
 
     def sample_energy(self, label):
 
         accflag = False
         if label == 'run' :
             accflag = True
-        s = self.rapl.sample_and_json(label, accflag)
+        s = self.rapl.sample_and_json(label, accflag,\
+                                          node=self.nc.nodename)
         self.logger(s)
 
     def cooldown(self,label):
@@ -96,9 +83,12 @@ class coolrmon_tracer:
 
         while True: 
             self.sample_energy(label)
-            temp = self.sample_temp(label)
+            self.sample_temp(label)
 
             # currently use only maxcoretemp
+            # XXX: readtempall() is called from sample_temp()
+            # possible to optimize this
+            temp = self.ctr.readtempall()
             maxcoretemp = self.ctr.getmaxcoretemp(temp)
             if maxcoretemp < self.cooldowntemp:
                 break
@@ -109,6 +99,11 @@ class coolrmon_tracer:
 
     def setinterval(self,isec):
         self.intervalsec = isec 
+
+    def setbeacon(self):
+        self.beacon = True
+        self.ctr.outputpercore(False)
+        self.freq.outputpercore(False)
 
     def setlogger(self,func):
         self.logger = func
@@ -121,35 +116,64 @@ class coolrmon_tracer:
         self.cooldowntemp = 45  # depend on arch
         #self.output = sys.stdout
         self.intervalsec = 1
+        #XXX: demo
+        self.beacon = False
         self.logger = self.defaultlogger
         # instantiate class
-        self.ctr = clr_hwmon.coretemp_reader()
-        self.rapl = clr_rapl.rapl_reader()
-        self.oc = clr_nodeinfo.osconfig()
+        self.nc = clr_nodeinfo.nodeconfig()
         self.ct = clr_nodeinfo.cputopology()
-        self.amp = clr_amperf.amperf_reader()
+
+        self.samples = []
+        self.ctr = clr_hwmon.coretemp_reader()
+        self.samples.append("temp") # XXX: fix coretemp_reader.init
+        self.rapl = clr_rapl.rapl_reader()
+        if self.rapl.init:
+            self.samples.append("energy")
+        #self.amp = clr_amperf.amperf_reader()
+        self.freq =  clr_cpufreq.cpufreq_reader()
+        if self.freq.init:
+            self.samples.append("freq")
         self.acpi = clr_hwmon.acpi_power_meter_reader()
+        if self.acpi.init:
+            self.samples.append("acpi")
 
-    def showconfig(self):
-        s  = '{"kernelversion":"%s"' % self.oc.version
-        s += ',"freqdriver":"%s"' % self.oc.freqdriver
-
-        #add detailed params later
-        #s += ',"cpufreq_governor":"%s"' % self.oc.governor
-        #s += ',"cpufreq_cur_freq":%s' % self.oc.cur_freq
-
+    def shownodeinfo(self):
+        s  = '{"nodeinfo":"%s"' % self.nc.nodename
+        s += ',"kernelversion":"%s"' % self.nc.version
+        s += ',"cpumodel":%d' % self.nc.cpumodel
+        s += ',"memoryKB":%d' % self.nc.memoryKB
+        s += ',"freqdriver":"%s"' % self.nc.freqdriver
+        s += ',"samples":[%s]' % \
+             ','.join(map((lambda s:'"%s"'%s), self.samples))
+        ncpus = len(self.ct.onlinecpus)
+        s += ',"ncpus":%d' % ncpus
         npkgs = len(self.ct.pkgcpus.keys())
         s += ',"npkgs":%d' % npkgs
-        s += ',"nproc":%d' % len(self.ct.onlinecpus)
 
-#        for p in sorted(self.ct.pkgcpus.keys()):
-#            s += ',"pkg%dnproc":%d' % (p, len(self.ct.pkgcpus[p]))
+        for p in sorted(self.ct.pkgcpus.keys()):
+            s += ',"pkg%d":[' % p
+            s += ','.join(map(str,self.ct.pkgcpus[p]))
+            s += ']'
+
+        for p in sorted(self.ct.pkgcpus.keys()):
+            s += ',"pkg%dphyid":[' % p
+            phyid = []
+            for cpuid in self.ct.pkgcpus[p]:
+                phyid.append(self.ct.cpu2coreid[cpuid][1])
+            s += ','.join(map(str,phyid))
+            s += ']'
+
+        s += ',"nnodes":%d' % len(self.ct.nodecpus.keys())
+        for n in sorted(self.ct.nodecpus.keys()):
+            s += ',"node%d":[' % n
+            s += ','.join(map(str,self.ct.nodecpus[n]))
+            s += ']'
 
         if self.rapl.initialized():
             s += ',"max_energy_uj":{'
             firstitem = True
             for p in sorted(self.ct.pkgcpus.keys()):
-                k = 'package-%d' % p  # does 'topology' and rapldriver follow the same numbering scheme?
+                k = 'package-%d' % p  # XXX: double check both 'topology' and rapldriver use the same numbering scheme.
                 if firstitem :
                     firstitem = False
                 else:
@@ -176,7 +200,7 @@ class coolrmon_tracer:
         sys.exit(1)
 
     def run(self, argv):
-        self.showconfig()
+        self.shownodeinfo()
 
         self.start_time0 = time.time()
         s = '{"starttime":%.3f}' % self.start_time0
@@ -192,6 +216,8 @@ class coolrmon_tracer:
             while True:
                 self.sample_temp('run')
                 self.sample_energy('run')
+                self.sample_freq('run')
+                self.sample_acpi('run')
 
                 time.sleep(self.intervalsec)
                 if self.kp.available():
@@ -217,8 +243,8 @@ class coolrmon_tracer:
 
             self.sample_temp('run')
             self.sample_energy('run')
-            tr.sample_freq('sample')
-            tr.sample_acpi('sample')
+            self.sample_freq('run')
+            self.sample_acpi('run')
 
             time.sleep(self.intervalsec)
 
@@ -239,11 +265,26 @@ class log2file:
     def logger(self,str):
         self.f.write(str + '\n')
 
+# XXX: tentative
+class log2beacon:
+    def __init__(self, cmd, topic):
+        self.cmd = cmd
+        self.topic = topic
+
+    def logger(self,str):
+        c = [self.cmd, self.topic, "%s" % str]
+        try:
+            subprocess.call(c)
+        except:
+            print 'Error: failed to publish:', c
+            time.sleep(5)
+        if debuglevel > 0:
+            print 'Debug:', c
 
 if __name__ == '__main__':
 
     shortopt = "hC:i:o:"
-    longopt = ['runtests', 'cooldown=', 'interval=', 'output=', 'sample', 'info' ]
+    longopt = ['runtests', 'cooldown=', 'interval=', 'output=', 'sample', 'info', 'output2beacon=', 'debug=' ]
     try:
         opts, args = getopt.getopt(sys.argv[1:], 
                                    shortopt, longopt)
@@ -260,12 +301,8 @@ if __name__ == '__main__':
         if o in ('-h'):
             usage()
             sys.exit(0)
-        elif o in ("--runtests"):
-            testosconfig()
-            testcputopology()
-            testtemp()
-            testrapl()
-            sys.exit(0)
+        elif o in ("--debug"):
+            debuglevel=int(a)
         elif o in ("-C", "--cooldown"):
             tr.setcooldowntemp(int(a))
         elif o in ("-i", "--interval"):
@@ -273,6 +310,14 @@ if __name__ == '__main__':
         elif o in ("-o", "--output"):
             l = log2file(a)
             tr.setlogger(l.logger)
+        elif o in ("--output2beacon"):
+            cmd, topic = a.split(':')
+            if len(topic) == 0:
+                print 'Specify topic after :'
+                sys.exit(1)
+            l = log2beacon(cmd, topic)
+            tr.setlogger(l.logger)
+            tr.setbeacon()
         elif o in ("--sample"):
             tr.sample_temp('sample')
             tr.sample_energy('sample')
@@ -280,14 +325,20 @@ if __name__ == '__main__':
             tr.sample_acpi('sample')
             sys.exit(0)
         elif o in ("--info"):
-            tr.showconfig()
+            tr.shownodeinfo()
             sys.exit(0)
         else:
             print 'Unknown:', o, a
             sys.exit(1)
     #
     #
-
-    tr.run(args)
+    # XXX: beacon is ad hoc impl for the demo
+    if tr.beacon:
+        while True:
+            tr.sample_temp('run')
+            tr.sample_freq('run')
+            time.sleep(tr.intervalsec)
+    else:
+        tr.run(args)
 
     sys.exit(0)

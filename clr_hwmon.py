@@ -47,7 +47,7 @@ class coretemp_reader :
             self.pkgtempfn = ''
 
     def __init__ (self):
-        ct = cputopology()
+        self.outputpercore(True)
 
         self.coretemp = {} # use pkgid as  key
         for d1 in os.listdir(self.hwmondir):
@@ -100,6 +100,34 @@ class coretemp_reader :
                     temps[c] = val
             ret[pkgid] = temps
         return ret
+
+    def outputpercore(self,flag=True):
+        self.percore=flag
+
+    def sample_and_json(self,node = ""):
+        temp = self.readtempall()
+        # constructing a json output
+        s  = '{"sample":"temp","time":%.3f' \
+            % (time.time())
+        if len(node) > 0:
+            s += ',"node":"%s"' % node
+        for p in sorted(temp.keys()):
+            s += ',"p%d":{' % p
+
+            pstat = self.getpkgstats(temp, p)
+
+            s += '"mean":%.2lf ' % pstat[0]
+            s += ',"std":%.2lf ' % pstat[1]
+            s += ',"min":%.2lf ' % pstat[2]
+            s += ',"max":%.2lf ' % pstat[3]
+
+            if self.percore:
+                for c in sorted(temp[p].keys()):
+                    s += ',"%s":%d' % (c, temp[p][c])
+            s += '}'
+        s += '}'
+
+        return s
 
     def getmaxcoretemp(self, temps):
         vals = []
@@ -162,27 +190,28 @@ class acpi_power_meter_reader :
         f.close()
         return retval
 
-    def sample_and_json(self):
+    def sample_and_json(self, node=""):
         if not self.init:
             return ''
 
         pwr = self.read()
-        buf = '{"sample":"acpi",'
-        buf += '"power":%.2lf}' % pwr
+        buf = '{"sample":"acpi", "time":%.3f' % time.time()
+        if len(node) > 0:
+            buf += ',"node":"%s"' % node
+        buf += ',"power":%.2lf}' % pwr
 
         return buf
 
 
 if __name__ == '__main__':
 
-
-
     acpipwr = acpi_power_meter_reader()
 
     if acpipwr.initialized():
-        print acpipwr.sample_and_json()
+        print acpipwr.sample_and_json('testnode')
 
     ctr = coretemp_reader()
+    ctr.outputpercore(False)
 
     temp = ctr.readtempall()
 
@@ -191,6 +220,11 @@ if __name__ == '__main__':
         for c in sorted(temp[p].keys()):
             print "%s=%d " % (c, temp[p][c]),
         print
+
+    for i in range(0,3):
+        s = ctr.sample_and_json()
+        print s
+        time.sleep(1)
 
     # measure the time to read all temp
     # note: reading temp on other core triggers an IPI, 

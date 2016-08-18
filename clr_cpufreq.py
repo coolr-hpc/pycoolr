@@ -14,6 +14,7 @@ import os, sys, time
 import struct
 import copy
 import clr_nodeinfo
+import numpy as np
 
 #an example the content of cpustat
 #id                    0
@@ -74,6 +75,7 @@ class cpustatvals:
 
         return freq
 
+
     def calc_aperf(self,prev): # prev is an object of cpustatvals
         if not (prev.d.has_key('tsc') and self.d.has_key('tsc')):
                     return 0.0
@@ -88,12 +90,13 @@ class cpustatvals:
 class cpufreq_reader:
 
     def __init__(self):
+        self.outputpercore(True)
+
         # I don't know how to create an object in a singleton manner in python
         # so simply instantiating an object of cputopology again here.
-        topo = clr_nodeinfo.cputopology()
-        topo.detect()
+        self.ct = clr_nodeinfo.cputopology()
 
-        self.cpus = topo.onlinecpus
+        self.cpus = self.ct.onlinecpus # just for convenience
 
         self.init = False
 
@@ -101,7 +104,7 @@ class cpufreq_reader:
             tmp = cpustatvals(cpuid) # just for cpustatfn
             statpath = tmp.cpustatfn(cpuid)
             if not os.path.exists(statpath):
-                print 'Not found', statpath
+                # print 'Not found', statpath
                 return
 
         self.init = True
@@ -109,6 +112,8 @@ class cpufreq_reader:
         self.samples = [
             [cpustatvals(i) for i in self.cpus],
             [cpustatvals(i) for i in self.cpus] ]
+
+        self.sample()
 
     def sample(self):
         if not self.init:
@@ -118,6 +123,7 @@ class cpufreq_reader:
         for cpuid in self.cpus:
             self.samples[idx][cpuid].parse()
         self.cnt = self.cnt + 1
+
 
     def pstate(self):
         ret = [0.0 for i in self.cpus]
@@ -172,6 +178,34 @@ class cpufreq_reader:
 
         return ret
 
+    def outputpercore(self,flag=True):
+        self.percore=flag
+
+    def sample_and_json(self, node=""):
+        if not self.init:
+            return ''
+
+        self.sample()
+        f = self.aperf()
+
+        buf = '{"sample":"freq", "time":%.3f' % time.time()
+        if len(node) > 0:
+            buf += ',"node":"%s"' % node
+        for p in sorted(self.ct.pkgcpus.keys()):
+            tmp = [f[i] for i in self.ct.pkgcpus[p]]
+            freqmean = np.mean(tmp)
+            freqstd = np.std(tmp)
+
+            buf += ',"p%s":{' % p
+            buf += '"mean":%.3lf,"std":%.3lf' % (freqmean,freqstd)
+            if self.percore:
+                for c in self.ct.pkgcpus[p]:
+                    buf += ',"c%d":%.3lf' % (c, f[c])
+            buf += '}'
+        buf += '}'
+        return buf
+
+
 
 if __name__ == '__main__':
 
@@ -179,6 +213,16 @@ if __name__ == '__main__':
     if not freq.init:
         print 'Please check the cpustat module is installed'
         sys.exit(1)
+
+    freq.outputpercore(False)
+
+    for i in range(0, 20):
+        j = freq.sample_and_json()
+        print '[freq json]'
+        print j
+        time.sleep(1)
+
+    sys.exit(0)
 
     for i in range(0, 20):
         freq.sample()
@@ -188,15 +232,19 @@ if __name__ == '__main__':
             print p,
         print
 
+        print '[aperf]',
+        for f in freq.aperf():
+            print '%.2lf ' % f,
+        print
+
         print '[freq]',
         for f in freq.cpufreq():
             print '%.2lf ' % f,
         print
 
-        print '[aperf]',
-        for f in freq.aperf():
-            print '%.2lf ' % f,
-        print
+        j = freq.sample_and_json()
+        print '[freq json]'
+        print j
 
         print
         time.sleep(1)
