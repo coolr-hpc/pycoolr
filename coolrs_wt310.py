@@ -14,6 +14,7 @@ import time
 import smq
 import keypress
 import json
+import math
 
 class wt310_reader:
 
@@ -61,23 +62,25 @@ class wt310_reader:
         # default setting. to query, :NUM:NORM:ITEM1? for exampe
         # 1: Watt hour, 2: Current, 3: Active Power, 4: Apparent Power 
         # 5: Reactive Power, 6: Power factor
-        # a's index is the item no minus one
+        # note that a's index is the item number minus one
 
         ret = {}
         # ret['WH'] = float(a[0])
-        ret['J'] = float(a[0]) * 3600.0
+        ret['J']  = float(a[0]) * 3600.0
         ret['P']  = float(a[2])
         ret['PF'] = float(a[5])
         return ret
 
     def start(self):
+        #  set the update interval 100ms (fastest) 
+        self.set(":RATE 100MS") 
         # set item1 watt-hour
         self.set(":NUM:NORM:ITEM1 WH,1")
         # start integration
-        self.set(":INTEG:MODE CONT")
+        self.set(":INTEG:MODE NORM")
+        self.set(":INTEG:TIM 2,0,0")  # 2 hours
         self.set(":INTEG:START")
         # ":INTEG:RESET" reset integration
-        # ":RATE 100MS"  set the update rate 100ms
 
     def reset(self):
         self.set('*RST')  # initialize the settings
@@ -96,14 +99,22 @@ def usage():
     print '[options]'
     print ''
     print '-i int : sampling interval in sec'
-    print '-c str : command string'
     print '-o str : output filename'
     print '-s str : start the mq producer. str is ip address'
+    print '--set str : issue command'
+    print '--get str : query value'
     print ''
+    print 'Examples:'
+    print '$ coolrs_wt310.py -i 0.2  # sample every 0.2 sec'
+    print '$ coolrs_wt310.py --set=:INTEG:RESET   # reset the energy itegration'
+    print '$ coolrs_wt310.py --get=:NUM:NORM:VAL? # query values'
+
+    print ''
+
 
 if __name__ == '__main__':
 
-    interval_sec = .5
+    interval_sec = .2
     outputfn = ''
     smqflag = False
     ipaddr = ''
@@ -155,7 +166,7 @@ if __name__ == '__main__':
     if samplemode:
         s = wt310.sample()
         ts = time.time()
-        str = '{"sample":"wt310", "time":%.2lf, "power":%.2lf}' % \
+        str = '# {"sample":"wt310", "time":%.2lf, "power":%.2lf}' % \
             (ts, s['P'])
         print str
         sys.exit(0)
@@ -180,13 +191,12 @@ if __name__ == '__main__':
 
     cfg = {}
     cfg["c1"] = {"label":"Time","unit":"Sec"}
-    cfg["c2"] = {"label":"Power", "unit":"Watt"}
+    cfg["c1"] = {"label":"Energy","unit":"Joules"}
+    cfg["c3"] = {"label":"Power", "unit":"Watt"}
     #cfg["c"] = {"label":"Power Factor", "unit":""}
-    #cfg["c"] = {"label":"Energy","unit":"Joules"}
+    # print >>f, json.dumps(cfg)
 
-
-    print >>f, json.dumps(cfg)
-
+    # XXX: smq is not tested
     if smqflag:
         mq = smq.producer(ipaddr)
         mq.start()
@@ -195,7 +205,11 @@ if __name__ == '__main__':
 
     kp = keypress.keypress()
     kp.enable()
-    print 'Press "q" to terminate'
+
+    s = wt310.sample()
+    time.sleep(1)
+
+    sys.stderr.write('Press "q" to terminate\n')
 
     while True:
         wt310.start()
@@ -203,10 +217,16 @@ if __name__ == '__main__':
         s = wt310.sample()
 
         ts = time.time()
-        #str = '%.2lf %.0lf %.2lf %.4lf' % \
-        #    (ts, s['J'], s['P'], s['PF'])
-        str = '%.2lf %.2lf' % \
-            (ts, s['P'])
+
+        ev = s['J'] # energy
+        pv = s['P'] # power
+
+        str = '%.2lf %.2lf %.2lf' % \
+            (ts, ev, pv)
+
+        if math.isnan(ev) or math.isnan(pv):
+            str = '#' + str
+
         print >>f, str
         f.flush()
 
@@ -221,4 +241,4 @@ if __name__ == '__main__':
     wt310.stop()
     kp.disable()
 
-    print 'terminated.'
+    sys.stderr.write('done\n')
