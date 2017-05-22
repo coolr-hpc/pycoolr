@@ -7,7 +7,7 @@
 # Contact: Kazutomo Yoshii <ky@anl.gov>
 #
 
-import os, sys, re, time
+import os, sys, re, time, getopt
 
 
 class rapl_reader:
@@ -265,19 +265,77 @@ class rapl_reader:
         return s
 
 
-if __name__ == '__main__':
+def usage():
+    print 'clr_rapl.py [options]'
+    print ''
+    print '--show:   show the current setting'
+    print '--limitp: set the limit to all packages'
+    print ''
+    print 'If no option is specified, run the test pattern.'
+    print ''
 
+def setlimit(newval):
+    pl = rr.readpowerlimit()
+    for k in sorted(pl.keys()):
+        if re.findall('package-[0-9]$', k):
+            fn = rr.dirs[k] + '/constraint_0_power_limit_uw'
+            # print fn
+            uw = newval * 1e6
+            try:
+                f = open(fn, 'w')
+            except:
+                print 'Failed to update:', fn
+                return
+            f.write('%d' % uw)
+            f.close()
+            
+
+def reportlimit():
+    pl = rr.readpowerlimit()
+    for k in sorted(pl.keys()):
+        if pl[k] > 0.0:
+            print k.replace('package-','p'), pl[k]
+
+
+if __name__ == '__main__':
     rr = rapl_reader()
 
-    if rr.initialized():
-        rr.start_energy_counter()
-        for i in range(0,3):
-            time.sleep(1)
-            s = rr.sample_and_json(accflag=True)
-            print s
-        rr.stop_energy_counter()
-        s = rr.total_energy_json()
-        print s
-
-    else:
+    if not rr.initialized():
         print 'Error: No intel rapl sysfs found'
+        sys.exit(1)
+
+    shortopt = "h"
+    longopt = ['show', 'limitp=']
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 
+                                   shortopt, longopt)
+
+    except getopt.GetoptError, err:
+        print err
+        usage()
+        sys.exit(1)
+
+    for o, a in opts:
+        if o in ('-h'):
+            usage()
+            sys.exit(0)
+        elif o in ("--show"):
+            reportlimit()
+            sys.exit(0)
+        elif o in ("--limitp"):
+            setlimit(int(a))
+            reportlimit()
+            sys.exit(0)
+
+    rr.start_energy_counter()
+    for i in range(0,3):
+        time.sleep(1)
+        s = rr.sample_and_json(accflag=True)
+        print s
+    rr.stop_energy_counter()
+    s = rr.total_energy_json()
+    print s
+
+
+    sys.exit(0)
+
