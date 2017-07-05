@@ -278,8 +278,12 @@ def setlimit(newval):
     pl = rr.readpowerlimit()
     for k in sorted(pl.keys()):
         if re.findall('package-[0-9]$', k):
+            fn = rr.dirs[k] + '/enabled'
+            f = open(fn, 'w')
+            f.write('1')
+            f.close()
+
             fn = rr.dirs[k] + '/constraint_0_power_limit_uw'
-            # print fn
             uw = newval * 1e6
             try:
                 f = open(fn, 'w')
@@ -323,7 +327,7 @@ if __name__ == '__main__':
             reportlimit()
             sys.exit(0)
         elif o in ("--limitp"):
-            setlimit(int(a))
+            setlimit(float(a))
             reportlimit()
             sys.exit(0)
 
