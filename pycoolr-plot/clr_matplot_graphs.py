@@ -225,7 +225,8 @@ class plot_rapl:
             x = t.getlistx()
             ycap = t.getlisto()
             #self.ax.plot(x,ycap, scaley=False, color='red', label='PKG%dlimit'%pkgid )
-            self.ax.plot(x,ycap, color='red', label='PKG%dlimit'%pkgid )
+            #self.ax.plot(x,ycap, color='red', label='PKG%dlimit'%pkgid )
+            self.ax.plot(x,ycap, params['pkgcolors'][pkgid], label='PKG%dlimit'%pkgid )
             pkgid += 1
 
         pkgid = 0

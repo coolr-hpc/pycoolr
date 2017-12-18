@@ -22,6 +22,7 @@ class genframes:
 
         # load all lines at init (naive)
         for jfn in jsonfn:
+            print jfn
             with open(jfn) as f:
                 while True:
                     l = f.readline()
@@ -108,7 +109,7 @@ class genframes:
     
 if __name__ == "__main__":
 
-    r = genframes("testdata/chameleon.json")
+    r = genframes(["things07.json"])
 
     nodes = r.getnodes()
     print nodes

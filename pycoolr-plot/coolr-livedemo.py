@@ -193,6 +193,7 @@ params['lrlen'] = lrlen
 params['gxsec'] = gxsec
 params['cur'] = 0  # this will be updated
 params['pkgcolors'] = [ 'blue', 'green' ] # for now
+params['plimcolors'] = [ '#ff00aa', '#ffaa00' ] # for now
 params['targetnode'] = targetnode
 params['enclaves'] = enclaves
 
