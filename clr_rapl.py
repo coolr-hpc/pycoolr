@@ -335,7 +335,10 @@ class rapl_reader:
             if re.findall('package-[0-9]$', k):
                 self._set_powerlimit(self.dirs[k], newval)
 
-    # XXX: Implement is_enabled_rapl(), enable_rapl(), disable_rapl()
+    # Implement the following method
+    # is_enabled_rapl(), enable_rapl(), disable_rapl()
+    # convshort2long
+    # pkgid2cpuids, cpuid2pkgid
 
 def usage():
     print 'clr_rapl.py [options]'
@@ -359,6 +362,20 @@ def report_powerlimits():
         if l[k]['enabled']:
             print k, 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW']
 
+def run_powercap_testbench():
+    # hard-coded for Haswell E5-2699v2 dual socket
+    print rr.get_powerdomains()
+    report_powerlimits()
+
+    w = 10
+    rr.set_powerlimit_pkg(120)
+    time.sleep(w)
+    rr.set_powerlimit_pkg(80)
+    time.sleep(w)
+    rr.set_powerlimit(130, 'package-1')
+    time.sleep(w)
+    rr.set_powerlimit_pkg(145)
+
 
 if __name__ == '__main__':
     rr = rapl_reader()
@@ -368,7 +385,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     shortopt = "h"
-    longopt = ['getpd', 'getplim', 'setplim=', 'show', 'limitp=' ]
+    longopt = ['getpd', 'getplim', 'setplim=', 'show', 'limitp=', 'testbench' ]
     try:
         opts, args = getopt.getopt(sys.argv[1:], 
                                    shortopt, longopt)
@@ -381,6 +398,11 @@ if __name__ == '__main__':
     for o, a in opts:
         if o in ('-h'):
             usage()
+            sys.exit(0)
+        elif o in ("--testbench"):
+            print 'Start: testbench'
+            run_powercap_testbench()
+            print 'Stop: testbench'
             sys.exit(0)
         elif o in ("--getpd"):
             print rr.get_powerdomains()
