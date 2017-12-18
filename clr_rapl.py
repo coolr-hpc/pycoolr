@@ -9,10 +9,36 @@
 
 import os, sys, re, time, getopt
 
+import clr_nodeinfo
 
 class rapl_reader:
     dryrun = False
+
     rapldir='/sys/devices/virtual/powercap/intel-rapl'
+
+    re_domain = re.compile('package-([0-9]+)(/\S+)?')
+
+    def readint(self, fn):
+        v = -1
+        for retry in range(0,10):
+            try:
+                f = open( fn )
+                v = int(f.readline())
+                f.close()
+            except:
+                continue
+        return v
+
+    def writeint(self, fn, v):
+        ret = False
+        try:
+            f = open(fn, 'w')
+            f.write('%d' % v)
+            f.close()
+            ret = True
+        except:
+            ret = False
+        return ret
     # 
     # e.g.,
     # intel-rapl:0/name
@@ -69,8 +95,8 @@ class rapl_reader:
     def shortenkey(self,str):
         return str.replace('package-','p')
 
-#        for k in sorted(self.dirs.keys()):
-#            print k, self.max_energy_range_uj_d[k]
+    #   for k in sorted(self.dirs.keys()):
+    #      print k, self.max_energy_range_uj_d[k]
 
 
     def readenergy(self):
@@ -84,18 +110,16 @@ class rapl_reader:
             return ret
         for k in sorted(self.dirs.keys()):
             fn = self.dirs[k] + "/energy_uj"
-            v = -1
-            for retry in range(0,10):
-                try:
-                    f = open( fn )
-                    v = int(f.readline())
-                    f.close()
-                except:
-                    continue
-            ret[k] = v
+            ret[k] = self.readint(fn)
         return ret
 
-    def readpowerlimit(self):
+    # Read all possible power caps, except package 'short_term', which
+    # will be supported later. This function is designed to be called
+    # from a slow path. return a dict with long domain names as keys
+    # and a value contains a dict with 'curW', 'maxW', 'enabled'
+
+
+    def readpowerlimitall(self):
         if not self.init:
             return
 
@@ -104,16 +128,18 @@ class rapl_reader:
             ret['package-0'] = 100.0
             return ret
         for k in sorted(self.dirs.keys()):
-            fn = self.dirs[k] + '/constraint_0_power_limit_uw'
-            v = -1
-            for retry in range(0,10):
-                try:
-                    f = open( fn )
-                    v = int(f.readline())
-                    f.close()
-                except:
-                    continue
-            ret[k] = v / (1000.0 * 1000.0) # uw to w
+            dvals = {}
+            v = self.readint( self.dirs[k] + '/constraint_0_power_limit_uw' )
+            dvals['curW'] = v * 1e-6  # uw to w
+
+            v = self.readint( self.dirs[k] + '/constraint_0_max_power_uw' )
+            dvals['maxW'] = v * 1e-6  # uw to w
+
+            dvals['enabled'] = False
+            v = self.readint( self.dirs[k] + '/enabled' )
+            if v == 1:
+                dvals['enabled'] = True
+            ret[k] = dvals
         return ret
 
     def diffenergy(self,e1,e2): # e1 is prev and e2 is not
@@ -237,14 +263,14 @@ class rapl_reader:
         s += '},'
 
         s += '"powercap":{'
-        rlimit = self.readpowerlimit()
+        rlimit = self.readpowerlimitall()
         firstitem = True
         for k in sorted(rlimit.keys()):
             if firstitem:
                 firstitem = False
             else:
                 s+=','
-            s += '"%s":%.1f' % (self.shortenkey(k), rlimit[k])
+            s += '"%s":%.1f' % (self.shortenkey(k), rlimit[k]['curW'])
         s += '}'
 
         s += '}'
@@ -265,40 +291,73 @@ class rapl_reader:
         return s
 
 
+
+    def conv_long2short(self, n):
+        m = self.re_domain.match(n)
+        sn = ''
+        if m:
+            pkgid = int(m.group(1))
+            sn = 'p%d' % (pkgid)
+
+            if m.group(2):
+                subname = m.group(2)[1:]
+                sn += subname
+        return sn
+
+    #
+    # APIs for power capping
+    #
+
+    def get_powerdomains(self):
+        return self.readpowerlimitall().keys
+
+    def get_powerlimits(self):
+        return self.readpowerlimitall()
+
+    def _set_powerlimit(self, rrdir, newval, id = 0):
+        fn = rrdir + '/constraint_%d_power_limit_uw' % id
+        uw = newval * 1e6
+        try:
+            f = open(fn, 'w')
+        except:
+            print 'Failed to update:', fn, '(root privilege is required)'
+            return
+        f.write('%d' % uw)
+        f.close()
+
+    def set_powerlimit(self, newval, dom):
+        l = self.dirs[dom]
+        self._set_powerlimit(l, newval)
+
+    def set_powerlimit_pkg(self, newval):
+        rlims = self.readpowerlimitall()
+        for k in rlims.keys():
+            if re.findall('package-[0-9]$', k):
+                self._set_powerlimit(self.dirs[k], newval)
+
+    # XXX: Implement is_enabled_rapl(), enable_rapl(), disable_rapl()
+
 def usage():
     print 'clr_rapl.py [options]'
     print ''
-    print '--show:   show the current setting'
-    print '--limitp: set the limit to all packages'
+    print '--show [pkgid]:   show the current setting'
+    print '--limitp val: set the limit to all packages'
+    print '         [pkgid:]powerval e.g., 140, 1:120'
     print ''
     print 'If no option is specified, run the test pattern.'
     print ''
 
-def setlimit(newval):
-    pl = rr.readpowerlimit()
-    for k in sorted(pl.keys()):
-        if re.findall('package-[0-9]$', k):
-            fn = rr.dirs[k] + '/enabled'
-            f = open(fn, 'w')
-            f.write('1')
-            f.close()
+def test_conv():
+    l = ['package-1', 'package-3/dram',  'package-2/core']
 
-            fn = rr.dirs[k] + '/constraint_0_power_limit_uw'
-            uw = newval * 1e6
-            try:
-                f = open(fn, 'w')
-            except:
-                print 'Failed to update:', fn
-                return
-            f.write('%d' % uw)
-            f.close()
-            
+    for s in l:
+        rr.conv_long2short(s)
 
-def reportlimit():
-    pl = rr.readpowerlimit()
-    for k in sorted(pl.keys()):
-        if pl[k] > 0.0:
-            print k.replace('package-','p'), pl[k]
+def report_powerlimits():
+    l = rr.get_powerlimits()
+    for k in l.keys():
+        if l[k]['enabled']:
+            print k, 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW']
 
 
 if __name__ == '__main__':
@@ -309,7 +368,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     shortopt = "h"
-    longopt = ['show', 'limitp=']
+    longopt = ['getpd', 'getplim', 'setplim=', 'show', 'limitp=' ]
     try:
         opts, args = getopt.getopt(sys.argv[1:], 
                                    shortopt, longopt)
@@ -323,12 +382,16 @@ if __name__ == '__main__':
         if o in ('-h'):
             usage()
             sys.exit(0)
-        elif o in ("--show"):
-            reportlimit()
+        elif o in ("--getpd"):
+            print rr.get_powerdomains()
             sys.exit(0)
-        elif o in ("--limitp"):
-            setlimit(float(a))
-            reportlimit()
+        elif o in ("--getplim", "--show"):
+            report_powerlimits()
+            sys.exit(0)
+        elif o in ("--setplim", "--limitp"):
+            v = float(a)
+            rr.set_powerlimit_pkg(v)
+            report_powerlimits()
             sys.exit(0)
 
     rr.start_energy_counter()
@@ -340,6 +403,4 @@ if __name__ == '__main__':
     s = rr.total_energy_json()
     print s
 
-
     sys.exit(0)
-
