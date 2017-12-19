@@ -3,7 +3,7 @@
 """
 COOLR RAPL package
 
-This code requires the intel_powerclamp module.
+The intel_rapl kernel module is required.
 
 Contact: Kazutomo Yoshii <ky@anl.gov>
 """
@@ -16,6 +16,9 @@ class rapl_reader:
     """The 'rapl_reader' class provides monitoring and controlling
     capabilities for Intel RAPL.
 
+    This implentation parses sysfs entries created the intel_rapl
+    kernel module.
+
     """
 
     dryrun = False
@@ -26,6 +29,9 @@ class rapl_reader:
     re_domain_short = re.compile('p(\d+)(/\D+)?')
 
     def readint(self, fn):
+        """A convenient function that reads the firs line in fn and returns
+        an integer value
+        """
         v = -1
         for retry in range(0,10):
             try:
@@ -37,6 +43,9 @@ class rapl_reader:
         return v
 
     def writeint(self, fn, v):
+        """A convenient function that writes an integer value to fn
+        """
+
         ret = False
         try:
             f = open(fn, 'w')
@@ -46,15 +55,24 @@ class rapl_reader:
         except:
             ret = False
         return ret
-    # 
-    # e.g.,
-    # intel-rapl:0/name
-    # intel-rapl:0/intel-rapl:0:0/name
-    # intel-rapl:0/intel-rapl:0:1/name
+
     def __init__ (self):
+        """Initialize the rapl_reader module
+
+        It detects the power domains/subdomains by scanning the
+        intel_rapl sysfs recurcively and creates a dict 'dirs' that
+        contains sub-directory for available domains.  The existance
+        of each domain is decided by the existance of a file name
+        'name' (see below). It also creates 
+
+        e.g.,
+        intel-rapl:0/name
+        intel-rapl:0/intel-rapl:0:0/name
+        intel-rapl:0/intel-rapl:0:1/name
+        """
+
         self.dirs = {}
         self.max_energy_range_uj_d = {}
-
         self.ct = clr_nodeinfo.cputopology()
 
         if self.dryrun :
