@@ -1,22 +1,29 @@
 #!/usr/bin/env python
-#
-# coolr rapl related codes
-#
-# This code requires the intel_powerclamp module.
-#
-# Contact: Kazutomo Yoshii <ky@anl.gov>
-#
+
+"""
+COOLR RAPL package
+
+This code requires the intel_powerclamp module.
+
+Contact: Kazutomo Yoshii <ky@anl.gov>
+"""
 
 import os, sys, re, time, getopt
 
 import clr_nodeinfo
 
 class rapl_reader:
+    """The 'rapl_reader' class provides monitoring and controlling
+    capabilities for Intel RAPL.
+
+    """
+
     dryrun = False
 
     rapldir='/sys/devices/virtual/powercap/intel-rapl'
-
-    re_domain = re.compile('package-([0-9]+)(/\S+)?')
+    re_domain  = re.compile('package-(\d+)$')
+    re_domain_long  = re.compile('package-(\d+)(/\S+)?')
+    re_domain_short = re.compile('p(\d+)(/\D+)?')
 
     def readint(self, fn):
         v = -1
@@ -47,6 +54,8 @@ class rapl_reader:
     def __init__ (self):
         self.dirs = {}
         self.max_energy_range_uj_d = {}
+
+        self.ct = clr_nodeinfo.cputopology()
 
         if self.dryrun :
             return 
@@ -94,10 +103,6 @@ class rapl_reader:
 
     def shortenkey(self,str):
         return str.replace('package-','p')
-
-    #   for k in sorted(self.dirs.keys()):
-    #      print k, self.max_energy_range_uj_d[k]
-
 
     def readenergy(self):
         if not self.init:
@@ -214,6 +219,45 @@ class rapl_reader:
         e = self.read_energy_acc()
         self.stop_time = time.time()
 
+    def sample(self, accflag=False):
+        if not self.initialized():
+            return
+
+        e = self.readenergy()
+
+        de = self.diffenergy(self.prev_e, e)
+
+        for k in sorted(e.keys()):
+            if k != 'time':
+                if accflag:
+                    self.totalenergy[k] += de[k]
+                self.lastpower[k] = de[k]/de['time']/1000.0/1000.0
+        self.prev_e = e
+
+        ret = dict()
+        ret['energy'] = dict()
+        for k in sorted(e.keys()):
+            if k != 'time':
+                ret['energy'][self.shortenkey(k)] = e[k]
+
+        ret['power'] = dict()
+        totalpower = 0.0
+        for k in sorted(self.lastpower.keys()):
+            if k != 'time':
+                ret['power'][self.shortenkey(k)] = self.lastpower[k]
+                # this is a bit ad hoc way to calculate the total.
+                # needs to be fixed later
+                if k.find("core") == -1:
+                    totalpower += self.lastpower[k]
+        ret['power']['total'] = totalpower
+
+        ret['powercap'] = dict()
+        rlimit = self.readpowerlimitall()
+        for k in sorted(rlimit.keys()):
+            ret['powercap'][self.shortenkey(k)] = rlimit[k]['curW']
+
+        return ret
+
     def sample_and_json(self, label = "", accflag = False, node = ""):
         if not self.initialized():
             return
@@ -290,23 +334,44 @@ class rapl_reader:
         s += '}'
         return s
 
+    #
+    # package domain name conversion methods
+    #
 
-
-    def conv_long2short(self, n):
-        m = self.re_domain.match(n)
+    def to_shortdn(self, n):
+        m = self.re_domain_long.match(n)
         sn = ''
-        if m:
-            pkgid = int(m.group(1))
-            sn = 'p%d' % (pkgid)
-
+        if not m:
+            return n
+        else:
+            sn = 'p%d' % int(m.group(1))
             if m.group(2):
-                subname = m.group(2)[1:]
-                sn += subname
+                sn += '/'
+                sn += m.group(2)[1:]
         return sn
+
+    def to_longdn(self, n):
+        m = self.re_domain_short.match(n)
+        ln = ''
+        if not m:
+            return n
+        else:
+            ln = 'package-%d' % int(m.group(1))
+            if m.group(2):
+                ln += m.group(2)
+        return ln
 
     #
     # APIs for power capping
     #
+    def get_powerdomains_cpuids(self):
+        ret = {}
+        for pd in self.readpowerlimitall().keys():
+            m = self.re_domain.match(pd)
+            if m:
+                pkgid = int(m.group(1))
+                ret[pkgid] = self.ct.pkgcpus[pkgid]
+        return ret
 
     def get_powerdomains(self):
         return self.readpowerlimitall().keys
@@ -326,7 +391,8 @@ class rapl_reader:
         f.close()
 
     def set_powerlimit(self, newval, dom):
-        l = self.dirs[dom]
+        dom_ln = to_longdn(dom)
+        l = self.dirs[dom_ln]
         self._set_powerlimit(l, newval)
 
     def set_powerlimit_pkg(self, newval):
@@ -337,8 +403,6 @@ class rapl_reader:
 
     # Implement the following method
     # is_enabled_rapl(), enable_rapl(), disable_rapl()
-    # convshort2long
-    # pkgid2cpuids, cpuid2pkgid
 
 def usage():
     print 'clr_rapl.py [options]'
@@ -350,11 +414,6 @@ def usage():
     print 'If no option is specified, run the test pattern.'
     print ''
 
-def test_conv():
-    l = ['package-1', 'package-3/dram',  'package-2/core']
-
-    for s in l:
-        rr.conv_long2short(s)
 
 def report_powerlimits():
     l = rr.get_powerlimits()
@@ -376,6 +435,29 @@ def run_powercap_testbench():
     time.sleep(w)
     rr.set_powerlimit_pkg(145)
 
+def test_conv():
+    lns = ['package-1', 'package-3/dram',  'package-2/core']
+
+    for ln in lns:
+        sn  = rr.to_shortdn(ln)
+        ln2 = rr.to_longdn(sn)
+        if ln == ln2:
+            print 'passed: ',
+        else:
+            print 'failed: ',
+        print ln, sn, ln2
+
+def test_map():
+    pds = rr.get_powerdomains_cpuids()
+
+    for pd in pds:
+        print pd, pds[pd]
+
+def unittest(m):
+    if m == 'conv':
+        test_conv()
+    elif m == 'map':
+        test_map()
 
 if __name__ == '__main__':
     rr = rapl_reader()
@@ -385,7 +467,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     shortopt = "h"
-    longopt = ['getpd', 'getplim', 'setplim=', 'show', 'limitp=', 'testbench' ]
+    longopt = ['getpd', 'getplim', 'setplim=', 'show', 'limitp=', 'testbench', 'doc', 'test=' ]
     try:
         opts, args = getopt.getopt(sys.argv[1:], 
                                    shortopt, longopt)
@@ -398,6 +480,12 @@ if __name__ == '__main__':
     for o, a in opts:
         if o in ('-h'):
             usage()
+            sys.exit(0)
+        elif o in ("--test"):
+            unittest(a)
+            sys.exit(0)
+        elif o in ("--doc"):
+            help(rapl_reader)
             sys.exit(0)
         elif o in ("--testbench"):
             print 'Start: testbench'
