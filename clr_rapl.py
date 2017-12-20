@@ -20,10 +20,6 @@ class rapl_reader:
     kernel module.
 
     """
-
-    dryrun = False
-
-    rapldir='/sys/devices/virtual/powercap/intel-rapl'
     re_domain  = re.compile('package-(\d+)$')
     re_domain_long  = re.compile('package-(\d+)(/\S+)?')
     re_domain_short = re.compile('p(\d+)(/\D+)?')
@@ -56,6 +52,23 @@ class rapl_reader:
             ret = False
         return ret
 
+
+    def is_enabled(self):
+        """Check see if RAPL is enabled
+
+        The overhead of this call is around 80 usec, which is
+        acceptable for reading energy since RAPL updates the internal
+        energy counter in milliseconds (e.g., 10 msec).
+
+        """
+        return self.readint(self.rapldir + "/enabled")
+
+    def write_enabled(self, val):
+        """Write val to enabled
+
+        For cases, even though sysfs reports enabled, we need to re-enable for power capping.
+        """
+
     def __init__ (self):
         """Initialize the rapl_reader module
 
@@ -63,20 +76,25 @@ class rapl_reader:
         intel_rapl sysfs recurcively and creates a dict 'dirs' that
         contains sub-directory for available domains.  The existance
         of each domain is decided by the existance of a file name
-        'name' (see below). It also creates 
+        'name' (see below). It also creates a dict named
+        'max_energy_range_uj_d' for the maximum energy range for the
+        RAPL energy counter, which is used to calculate the counter
+        wrapping.
 
         e.g.,
         intel-rapl:0/name
         intel-rapl:0/intel-rapl:0:0/name
         intel-rapl:0/intel-rapl:0:1/name
         """
+        self.dryrun = False
+        self.rapldir='/sys/devices/virtual/powercap/intel-rapl'
 
         self.dirs = {}
         self.max_energy_range_uj_d = {}
         self.ct = clr_nodeinfo.cputopology()
 
         if self.dryrun :
-            return 
+            return
 
         self.init = False
         if not os.path.exists(self.rapldir):
@@ -117,13 +135,20 @@ class rapl_reader:
         self.start_energy_counter()
 
     def initialized(self):
+        """Return whether or not it is initialized"""
         return self.init
 
     def shortenkey(self,str):
+        """Convert a long name to a short name"""
         return str.replace('package-','p')
 
     def readenergy(self):
-        if not self.init:
+        """Read the energy consumption on all available domains
+
+        Returns:
+            A dict for energy consumptions on all available domains
+        """
+        if not self.initialized():
             return
 
         ret = {}
@@ -136,14 +161,19 @@ class rapl_reader:
             ret[k] = self.readint(fn)
         return ret
 
-    # Read all possible power caps, except package 'short_term', which
-    # will be supported later. This function is designed to be called
-    # from a slow path. return a dict with long domain names as keys
-    # and a value contains a dict with 'curW', 'maxW', 'enabled'
-
 
     def readpowerlimitall(self):
-        if not self.init:
+        """Read the current power limit values on all available domains
+
+        Read all possible power caps, except package 'short_term', which
+        will be supported later. This function is designed to be called
+        from a slow path. return a dict with long domain names as keys
+        and a value contains a dict with 'curW', 'maxW', 'enabled'
+
+        Returns:
+            A dict for power limit (power capping) values on all available domains
+        """
+        if not self.initialized():
             return
 
         ret = {}
@@ -165,7 +195,17 @@ class rapl_reader:
             ret[k] = dvals
         return ret
 
-    def diffenergy(self,e1,e2): # e1 is prev and e2 is not
+    def diffenergy(self, e1, e2): # e1 is prev and e2 is now
+        """Calculate the delta value between e1 and e2, considering the counter wrapping
+
+        Args:
+          e1: the previous energy value
+          e2: the current energy value
+
+        Returns:
+          A dict for the energy delta values on all available domains and the time delta values
+        """
+
         ret = {}
         ret['time'] = e2['time'] - e1['time']
         for k in self.max_energy_range_uj_d:
@@ -175,10 +215,18 @@ class rapl_reader:
                 ret[k] = (self.max_energy_range_uj_d[k]-e1[k]) + e2[k]
         return ret
 
-    # calculate the average power from two energy values
-    # e1 and e2 are the value returned from readenergy()
-    # e1 should be sampled before e2
-    def calcpower(self,e1,e2): 
+    def calcpower(self, e1, e2):
+        """Calculate the average power from two energy values
+
+        e1 and e2 are the value returned from readenergy()
+
+        Args:
+          e1: the previous energy value
+          e2: the current energy value
+
+        Returns:
+          A dict for the average power consumption values on all available domains and the time delta values
+        """
         ret = {}
         delta = e2['time'] - e1['time']  # assume 'time' never wrap around
         ret['delta']  = delta
@@ -197,8 +245,10 @@ class rapl_reader:
             ret[k] /= (1000.0*1000.0) # conv. [uW] to [W]
         return ret
 
-    # this should be renamed to reset_...
+
     def start_energy_counter(self):
+        """Start or reset the energy counter
+        """
         if not self.initialized():
             return
 
@@ -213,8 +263,10 @@ class rapl_reader:
                 self.lastpower[k] = 0.0
         self.prev_e = e
 
-    # XXX: fix the total energy tracking later
+
     def read_energy_acc(self):
+        """Read the accumulated energy consumption
+        """
         if not self.initialized():
             return
 
@@ -231,6 +283,9 @@ class rapl_reader:
         return e
 
     def stop_energy_counter(self):
+        """Stop the energy counter
+        """
+
         if not self.initialized():
             return
 
@@ -238,6 +293,9 @@ class rapl_reader:
         self.stop_time = time.time()
 
     def sample(self, accflag=False):
+        """Sample the current counter values and return a dict
+        """
+
         if not self.initialized():
             return
 
@@ -277,6 +335,9 @@ class rapl_reader:
         return ret
 
     def sample_and_json(self, label = "", accflag = False, node = ""):
+        """Sample the current counter values and creates a json string
+        """
+
         if not self.initialized():
             return
 
@@ -339,6 +400,8 @@ class rapl_reader:
         return s
 
     def total_energy_json(self):
+        """Create a json string for the total energy consumption
+        """
         if not self.initialized():
             return ''
 
@@ -352,11 +415,13 @@ class rapl_reader:
         s += '}'
         return s
 
-    #
-    # package domain name conversion methods
-    #
 
     def to_shortdn(self, n):
+        """Convert to a short domain name form
+
+        No conversion takes place if n is already a short form
+        """
+
         m = self.re_domain_long.match(n)
         sn = ''
         if not m:
@@ -369,6 +434,11 @@ class rapl_reader:
         return sn
 
     def to_longdn(self, n):
+        """Convert to a long domain name form
+
+        No conversion takes place if n is already a long form
+        """
+
         m = self.re_domain_short.match(n)
         ln = ''
         if not m:
@@ -379,10 +449,12 @@ class rapl_reader:
                 ln += m.group(2)
         return ln
 
-    #
-    # APIs for power capping
-    #
-    def get_powerdomains_cpuids(self):
+    def create_powerdomains_cpuids(self):
+        """Create a mapping that represents the relationship between power domains and cpuids
+
+        Return:
+           A dict with power domain (interger) as key and a list of cpuids as content
+        """
         ret = {}
         for pd in self.readpowerlimitall().keys():
             m = self.re_domain.match(pd)
@@ -392,12 +464,25 @@ class rapl_reader:
         return ret
 
     def get_powerdomains(self):
+        """Return a list of available power domains
+
+        Return:
+           A list that contains all possible power domain names (long-name string)
+        """
         return self.readpowerlimitall().keys
 
     def get_powerlimits(self):
+        """Return a dict of the current power limit values on all available power domains
+
+        Return:
+           A dict with long-name power domain string as key and a dict that includes capping information as content
+        """
         return self.readpowerlimitall()
 
     def _set_powerlimit(self, rrdir, newval, id = 0):
+        """Internal method to set new power limit value
+        """
+
         fn = rrdir + '/constraint_%d_power_limit_uw' % id
         uw = newval * 1e6
         try:
@@ -409,18 +494,24 @@ class rapl_reader:
         f.close()
 
     def set_powerlimit(self, newval, dom):
+        """Set new power limit value to specified power domain "dom"
+
+        Args:
+           newval: new power limit value in Watt
+           dom: target power domain. both long or short name forms are accepted
+        """
         dom_ln = to_longdn(dom)
         l = self.dirs[dom_ln]
         self._set_powerlimit(l, newval)
 
     def set_powerlimit_pkg(self, newval):
+        """Set new power limit value to all possible top-level CPU packages
+        """
+
         rlims = self.readpowerlimitall()
         for k in rlims.keys():
             if re.findall('package-[0-9]$', k):
                 self._set_powerlimit(self.dirs[k], newval)
-
-    # Implement the following method
-    # is_enabled_rapl(), enable_rapl(), disable_rapl()
 
 def usage():
     print 'clr_rapl.py [options]'
@@ -466,7 +557,7 @@ def test_conv():
         print ln, sn, ln2
 
 def test_map():
-    pds = rr.get_powerdomains_cpuids()
+    pds = rr.create_powerdomains_cpuids()
 
     for pd in pds:
         print pd, pds[pd]
@@ -487,7 +578,7 @@ if __name__ == '__main__':
     shortopt = "h"
     longopt = ['getpd', 'getplim', 'setplim=', 'show', 'limitp=', 'testbench', 'doc', 'test=' ]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 
+        opts, args = getopt.getopt(sys.argv[1:],
                                    shortopt, longopt)
 
     except getopt.GetoptError, err:
