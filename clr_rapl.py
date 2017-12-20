@@ -86,11 +86,27 @@ class rapl_reader:
         """
         return self.readint(self.rapldir + "/enabled")
 
-    def write_enabled(self, val):
-        """Write val to enabled
+    def update_enabled(self, val, dom=''):
+        """Update the status of enabled with the specified val
 
         For cases, even though sysfs reports enabled, we need to re-enable for power capping.
         """
+
+        errmsg = "Root privilege is required to update 'enabled' or feature is not implemented"
+
+        if dom == '':
+            d = self.rapldir + "/enabled"
+            if not self.writeint(d, val):
+                print 'Failed to update:', d
+                print errmsg
+                sys.exit(1)
+        else:
+            dom_ln = self.to_longdn(dom)
+            d = self.dirs[dom_ln] + "/enabled"
+            if not self.writeint(d, val):
+                print 'Failed to update:', d
+                print errmsg
+                sys.exit(1)
 
     def __init__ (self, sysfsdir='/sys/devices/virtual/powercap/intel-rapl'):
         """Initialize the rapl_reader module
@@ -549,11 +565,33 @@ def usage():
 
 def report_powerlimits():
     l = rr.get_powerlimits()
+
+    nc = clr_nodeinfo.nodeconfig()
+
+    print '%s, model=%d, kernel=%s' % (nc.cpumodelname, nc.cpumodel, nc.version)
+    print
+
+    cnt_enabled = 0
+    cnt_disabled = 0
     for k in l.keys():
         if l[k]['enabled']:
-            print k, 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW'], 'enabled'
+            cnt_enabled += 1
         else:
-            print k, 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW'], 'disabled'
+            cnt_disabled += 1
+
+    if cnt_enabled > 0:
+        print '[Enabled]'
+        for k in l.keys():
+            if l[k]['enabled']:
+                print "%-10s" % rr.to_shortdn(k), 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW']
+        print
+
+    if cnt_disabled > 0:
+        print '[Disabled]'
+        for k in l.keys():
+            if not l[k]['enabled']:
+                print "%-10s" % rr.to_shortdn(k), 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW']
+        print
 
 def run_powercap_testbench():
     # hard-coded for Haswell E5-2699v2 dual socket
@@ -601,7 +639,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     shortopt = "h"
-    longopt = ['getpd', 'getplim', 'setplim=', 'show', 'limitp=', 'testbench', 'doc', 'test=' ]
+    longopt = ['getpd', 'getplim', 'setplim=', 'show', 'limitp=', 'testbench', 'doc', 'test=', 'update_enabled=' ]
     try:
         opts, args = getopt.getopt(sys.argv[1:],
                                    shortopt, longopt)
@@ -637,6 +675,23 @@ if __name__ == '__main__':
             rr.set_powerlimit_pkg(v)
             report_powerlimits()
             sys.exit(0)
+        elif o in ("--update_enabled" ):
+            # 1
+            # p0dram:1
+            v = 0
+            dom = ''
+            tmp = a.split(':')
+            if len(tmp) == 2 :
+                dom = tmp[0]
+                v = int(tmp[1])
+            else:
+                v = int(tmp[0])
+
+            rr.update_enabled(v, dom)
+            print 'is_enabled?:', rr.is_enabled()
+            sys.exit(0)
+
+
 
     rr.start_energy_counter()
     for i in range(0,3):
