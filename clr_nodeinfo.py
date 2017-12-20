@@ -96,6 +96,7 @@ class nodeconfig :
         self.version = tmp.split()[2]
 
         re_model = re.compile("^model\s+:\s+([0-9]+)")
+        re_model_name = re.compile("^model name\s+:\s+(.*)")
         self.cpumodel = -1
         with open('/proc/cpuinfo') as f:
             while True:
@@ -105,6 +106,9 @@ class nodeconfig :
                 m = re_model.match(l)
                 if m:
                     self.cpumodel = int(m.group(1))
+                m = re_model_name.match(l)
+                if m:
+                    self.cpumodelname = m.group(1)
 
         self.memoryKB = -1
         with open('/proc/meminfo') as f:
