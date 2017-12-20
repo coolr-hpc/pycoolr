@@ -5,7 +5,6 @@ COOLR RAPL package
 
 The intel_rapl kernel module is required.
 
-Contact: Kazutomo Yoshii <ky@anl.gov>
 """
 
 import os, sys, re, time, getopt
@@ -13,8 +12,32 @@ import os, sys, re, time, getopt
 import clr_nodeinfo
 
 class rapl_reader:
-    """The 'rapl_reader' class provides monitoring and controlling
-    capabilities for Intel RAPL.
+    """The rapl_reader class provides APIs for reading energy/power
+    consumption and controlling hardware power capping on Intel CPUs
+    with the running average power limit (RAPL) capability.
+
+    The granularity of power/energy measurement and power capping is
+    basically per CPU package domain. Each CPU package domains
+    consists a couple of subdomains, depending on CPU models.
+    Available subdomains are detected during the initialization.  Here
+    is the naming conversion of power domains/subdomains.
+
+    package-N        : the power domain for the entire CPU package. N is a zero-based integer that
+                       indicates CPU package ID
+    package-N/core   : the power domain for CPU cores associated with the package-N CPU domain
+    package-N/uncore : the power domain for graphic uncore logics associated  with the package-N CPU domain
+    package-N/dram   : the power domain for DRAMs associated with the package-N CPU domain
+
+    For further details on power domains, refer to "Intel 64 and IA-32
+    Architectures Software Developer's Manual Volume 3B: System
+    Programming Guide, Part 2"
+
+    In addition to the above naming conversion, a short form is also provided
+
+    pN        : equivalent to package-N
+    pN/core   : equivalent to package-N/core
+    pN/uncore : equivalent to package-N/uncore
+    pN/dram   : equivalent to package-N/dram
 
     This implentation parses sysfs entries created the intel_rapl
     kernel module.
@@ -69,7 +92,7 @@ class rapl_reader:
         For cases, even though sysfs reports enabled, we need to re-enable for power capping.
         """
 
-    def __init__ (self):
+    def __init__ (self, sysfsdir='/sys/devices/virtual/powercap/intel-rapl'):
         """Initialize the rapl_reader module
 
         It detects the power domains/subdomains by scanning the
@@ -87,7 +110,7 @@ class rapl_reader:
         intel-rapl:0/intel-rapl:0:1/name
         """
         self.dryrun = False
-        self.rapldir='/sys/devices/virtual/powercap/intel-rapl'
+        self.rapldir = sysfsdir
 
         self.dirs = {}
         self.max_energy_range_uj_d = {}
@@ -516,7 +539,7 @@ class rapl_reader:
 def usage():
     print 'clr_rapl.py [options]'
     print ''
-    print '--show [pkgid]:   show the current setting'
+    print '--show:   show the current setting'
     print '--limitp val: set the limit to all packages'
     print '         [pkgid:]powerval e.g., 140, 1:120'
     print ''
@@ -528,7 +551,9 @@ def report_powerlimits():
     l = rr.get_powerlimits()
     for k in l.keys():
         if l[k]['enabled']:
-            print k, 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW']
+            print k, 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW'], 'enabled'
+        else:
+            print k, 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW'], 'disabled'
 
 def run_powercap_testbench():
     # hard-coded for Haswell E5-2699v2 dual socket
