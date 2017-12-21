@@ -597,10 +597,10 @@ def report_powerlimits():
                 print "%-10s" % rr.to_shortdn(k), 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW']
         print
 
-    print '[powerdomain-cpuid mapping]'
-    pds = rr.create_powerdomains_cpuids()
-    for pd in pds:
-        print 'package-%d cpuids:' % pd, pds[pd]
+#    print '[powerdomain-cpuid mapping]'
+#    pds = rr.create_powerdomains_cpuids()
+#    for pd in pds:
+#        print 'package-%d cpuids:' % pd, pds[pd]
         
 def run_powercap_testbench():
     # hard-coded for Haswell E5-2699v2 dual socket
