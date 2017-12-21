@@ -532,16 +532,20 @@ class rapl_reader:
         f.write('%d' % uw)
         f.close()
 
-    def set_powerlimit(self, newval, dom):
+    def set_powerlimit(self, newval, dom = ''):
         """Set new power limit value to specified power domain "dom"
 
         Args:
            newval: new power limit value in Watt
            dom: target power domain. both long or short name forms are accepted
         """
-        dom_ln = to_longdn(dom)
-        l = self.dirs[dom_ln]
-        self._set_powerlimit(l, newval)
+
+        if dom == '':
+            self.set_powerlimit_pkg(self, newval)
+        else:
+            dom_ln = self.to_longdn(dom)
+            l = self.dirs[dom_ln]
+            self._set_powerlimit(l, newval)
 
     def set_powerlimit_pkg(self, newval):
         """Set new power limit value to all possible top-level CPU packages
@@ -676,8 +680,16 @@ if __name__ == '__main__':
             report_powerlimits()
             sys.exit(0)
         elif o in ("--setplim", "--limitp"):
-            v = float(a)
-            rr.set_powerlimit_pkg(v)
+            v = 0
+            dom = ''
+            tmp = a.split(':')
+            if len(tmp) == 2 :
+                dom = tmp[0]
+                v = int(tmp[1])
+            else:
+                v = int(tmp[0])
+
+            rr.set_powerlimit(v, dom)
             report_powerlimits()
             sys.exit(0)
         elif o in ("--update_enabled" ):
