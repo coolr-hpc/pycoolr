@@ -39,6 +39,15 @@ class rapl_reader:
     pN/uncore : equivalent to package-N/uncore
     pN/dram   : equivalent to package-N/dram
 
+    def update_enabled(self, val, dom=''):
+
+    All methods can be called without root privilege, except the
+    following methods.
+
+    update_enabled()
+    set_powerlimit()
+    set_powerlimit_pkg()
+
     This implentation parses sysfs entries created the intel_rapl
     kernel module.
 
@@ -89,7 +98,10 @@ class rapl_reader:
     def update_enabled(self, val, dom=''):
         """Update the status of enabled with the specified val
 
-        For cases, even though sysfs reports enabled, we need to re-enable for power capping.
+        Note: root privilege is required. If hardware does not
+        support, this function fails.
+
+        For cases, even though sysfs reports enabled, we may need to re-enable for power capping.
         """
 
         errmsg = "Root privilege is required to update 'enabled' or feature is not implemented"
@@ -541,7 +553,7 @@ class rapl_reader:
         """
 
         if dom == '':
-            self.set_powerlimit_pkg(self, newval)
+            self.set_powerlimit_pkg(newval)
         else:
             dom_ln = self.to_longdn(dom)
             l = self.dirs[dom_ln]
@@ -601,7 +613,7 @@ def report_powerlimits():
 #    pds = rr.create_powerdomains_cpuids()
 #    for pd in pds:
 #        print 'package-%d cpuids:' % pd, pds[pd]
-        
+
 def run_powercap_testbench():
     # hard-coded for Haswell E5-2699v2 dual socket
     print rr.get_powerdomains()
@@ -705,7 +717,7 @@ if __name__ == '__main__':
                 v = int(tmp[0])
 
             rr.update_enabled(v, dom)
-            print 'is_enabled?:', rr.is_enabled()
+            report_powerlimits()
             sys.exit(0)
 
 
