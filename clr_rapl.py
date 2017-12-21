@@ -520,7 +520,7 @@ class rapl_reader:
         Return:
            A list that contains all possible power domain names (long-name string)
         """
-        return self.readpowerlimitall().keys
+        return self.readpowerlimitall().keys()
 
     def get_powerlimits(self):
         """Return a dict of the current power limit values on all available power domains
