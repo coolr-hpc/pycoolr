@@ -30,27 +30,27 @@ def createtable(dbfile):
 
 
 def usage():
-    print ''
-    print 'Usage: query-beep-db.py [options]'
-    print ''
-    print '[options]'
-    print ''
-    print '--dbfile=filename : specify dbfile  (default=%s)' % dbfile
-    print '--secago=N : retrieve data between N sec old and now (default=%d)' % secago
-    print '--gtidx=N : retrieve data whose idx is greather than N (no default)'
-    print '--last=N : retrieve last N data (no default)   higher priority than --gtidx'
-    print '--compress : data compressed by zlib and print base64 encoded string'
-    print ''
-    print '--create : create required table and exit'
-    print
+    print('')
+    print('Usage: query-beep-db.py [options]')
+    print('')
+    print('[options]')
+    print('')
+    print('--dbfile=filename : specify dbfile  (default=%s)' % dbfile)
+    print('--secago=N : retrieve data between N sec old and now (default=%d)' % secago)
+    print('--gtidx=N : retrieve data whose idx is greather than N (no default)')
+    print('--last=N : retrieve last N data (no default)   higher priority than --gtidx')
+    print('--compress : data compressed by zlib and print base64 encoded string')
+    print('')
+    print('--create : create required table and exit')
+    print()
 
 shortopt = "h"
 longopt = ['dbfile=', 'secago=', 'gtidx=', 'last=', 'compress', 'stat', 'create']
 try:
     opts, args = getopt.getopt(sys.argv[1:],
                                shortopt, longopt)
-except getopt.GetoptError, err:
-    print err
+except getopt.GetoptError as err:
+    print(err)
     usage()
     sys.exit(1)
 
@@ -107,16 +107,16 @@ with con:
                 t2 = float(row[1])
             nrecs += 1
         except:
-            print >> sys.stderr, 'json error:', row[2]
+            print('json error:', row[2], file=sys.stderr)
 
     if compress:
-        print base64.b64encode(zlib.compress(buf,9))
+        print(base64.b64encode(zlib.compress(buf,9)))
     else:
-        print buf,
+        print(buf, end=' ')
 
     if stat:
         if nrecs > 1:
-            print "{'sample':'query-beep-db', 'rps':%.2lf}" % (float(nrecs)/(t2-t1))
+            print("{'sample':'query-beep-db', 'rps':%.2lf}" % (float(nrecs)/(t2-t1)))
 
 #   print len(buf)
 

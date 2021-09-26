@@ -48,12 +48,12 @@ class producer:
         while not stop_ev.is_set():
             try:
                 buf = c.recv(256)
-            except socket.error, e:
+            except socket.error as e:
                 if e.args[0] in (errno.EAGAIN, errno.EWOULDBLOCK):
                     stop_ev.wait(self.timeoutsec)
                     continue
                 else:
-                    print e
+                    print(e)
                     break
                 
             # buf should be available for read
@@ -70,7 +70,7 @@ class producer:
             cmd = d['cmd']
             if len(cmd) > 0:
                 if self.debug > 0:
-                    print 'cmd', cmd, len(self.dq)
+                    print('cmd', cmd, len(self.dq))
                 if cmd == 'quit':
                     break
                 if cmd == 'cfg' :
@@ -134,10 +134,10 @@ class consumer:
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print 'Usage: %s p|c ip [port]'
-        print ''
-        print 'p is the producer mode'
-        print 'c is the consumer mode'
+        print('Usage: %s p|c ip [port]')
+        print('')
+        print('p is the producer mode')
+        print('c is the consumer mode')
         sys.exit(1)
 
     port = 23458
@@ -147,8 +147,8 @@ if __name__ == "__main__":
     if len(sys.argv) >= 4:
         port = int(sys.argv[3])
 
-    print 'ip:', ip
-    print 'port:', port
+    print('ip:', ip)
+    print('port:', port)
 
     if sys.argv[1] == "p":
         #
@@ -160,7 +160,7 @@ if __name__ == "__main__":
         cnt = 0
         while dp.active():
             str = "t=%lf cnt=%d" % (time.time(), cnt)
-            print str
+            print(str)
             dp.append(str)
             cnt += 1
             if cnt > 20:
@@ -177,9 +177,9 @@ if __name__ == "__main__":
     if len(d) == 0:
         # assume the producer is not running or dead
         sys.exit(1)
-    print 'cfg', d
+    print('cfg', d)
     d = dc.get({'cmd':'len'})
-    print 'len:', d['len']
+    print('len:', d['len'])
 #    d = dc.get({'cmd':'clear'})
 
     while True:
@@ -196,9 +196,9 @@ if __name__ == "__main__":
             d = dc.get({'cmd':'item'})
             if len(d) == 0:
                 break
-            print 'item:', d['item'], 'remain:', d['len']
+            print('item:', d['item'], 'remain:', d['len'])
         time.sleep(2)
 
-    print 'done'
+    print('done')
 
     sys.exit(0)

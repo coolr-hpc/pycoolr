@@ -72,7 +72,7 @@ class coretemp_reader :
                         pkgtempfn = "%s/temp%d_input" % (tmpdir, tempid)
                         pkgid = self.parse_pkgtemp("%s/%s" % (tmpdir, d2))
                         if pkgid < 0 :
-                            print 'unlikely: ', pkgtempfn
+                            print('unlikely: ', pkgtempfn)
 
 
 
@@ -97,7 +97,7 @@ class coretemp_reader :
             for c in sorted(ctemp[pkgid].coretempfns.keys()):
                 if os.access(ctemp[pkgid].coretempfns[c], os.R_OK):
                     val = int(readbuf(ctemp[pkgid].coretempfns[c]))/1000
-                    temps[c] = val
+                    temps[str(c)] = val
             ret[pkgid] = temps
         return ret
 
@@ -131,14 +131,14 @@ class coretemp_reader :
 
     def getmaxcoretemp(self, temps):
         vals = []
-        for pkgid in temps.keys():
-            for c in temps[pkgid].keys():
+        for pkgid in list(temps.keys()):
+            for c in list(temps[pkgid].keys()):
                 vals.append(temps[pkgid][c])
         return np.max(vals)
 
     def getpkgstats(self, temps, pkgid):
         vals = []
-        for c in temps[pkgid].keys():
+        for c in list(temps[pkgid].keys()):
             vals.append(temps[pkgid][c])
         return [np.mean(vals), np.std(vals), np.min(vals), np.max(vals)]
                     
@@ -208,7 +208,7 @@ if __name__ == '__main__':
     acpipwr = acpi_power_meter_reader()
 
     if acpipwr.initialized():
-        print acpipwr.sample_and_json('testnode')
+        print(acpipwr.sample_and_json('testnode'))
 
     ctr = coretemp_reader()
     ctr.outputpercore(False)
@@ -216,34 +216,34 @@ if __name__ == '__main__':
     temp = ctr.readtempall()
 
     for p in sorted(temp.keys()):
-        print 'pkg%d:' % p,
+        print('pkg%d:' % p, end=' ')
         for c in sorted(temp[p].keys()):
-            print "%s=%d " % (c, temp[p][c]),
-        print
+            print("%s=%d " % (c, temp[p][c]), end=' ')
+        print()
 
     for i in range(0,3):
         s = ctr.sample_and_json()
-        print s
+        print(s)
         time.sleep(1)
 
     # measure the time to read all temp
     # note: reading temp on other core triggers an IPI, 
     # so reading temp frequency will icreate the CPU load
-    print 'Measuring readtime() and getmaxcoretemp ...'
+    print('Measuring readtime() and getmaxcoretemp ...')
     for i in range(0,3):
         a = time.time()
         temp = ctr.readtempall()
         maxcoretemp = ctr.getmaxcoretemp(temp)
         b = time.time()
-        print '  %.1f msec, maxcoretemp=%d' % ((b-a)*1000.0, maxcoretemp),
+        print('  %.1f msec, maxcoretemp=%d' % ((b-a)*1000.0, maxcoretemp), end=' ')
 
         for p in sorted(temp.keys()):
             s = ctr.getpkgstats(temp, p)
-            print ' mean=%.2lf std=%.2lf min=%.1lf max=%.1lf' % \
-                (s[0], s[1], s[2], s[3]),
+            print(' mean=%.2lf std=%.2lf min=%.1lf max=%.1lf' % \
+                (s[0], s[1], s[2], s[3]), end=' ')
 
-        print
+        print()
 
         time.sleep(1)
 
-    print
+    print()

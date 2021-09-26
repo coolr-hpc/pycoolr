@@ -21,7 +21,7 @@ class amperf_reader :
         if os.path.exists('/sys/devices/system/cpu/cpu0/amperf'):
             self.init = True
         else:
-            print 'Warning: the amperf sysfs is unavailable'
+            print('Warning: the amperf sysfs is unavailable')
 
         self.samples = [ None, None ]
         self.sidx = 0
@@ -76,12 +76,12 @@ class amperf_reader :
         f = self.samples[self.firstidx()]
         s = self.samples[self.secondidx()]
         
-        for kp in f.keys():
+        for kp in list(f.keys()):
             if kp == 'time':
                 d['time'] = s[kp] - f[kp] 
             else:
                 tmp = {}
-                for kc in f[kp].keys():
+                for kc in list(f[kp].keys()):
                     vals = []
                     for i in range(0,2):
                         vals.append(s[kp][kc][i] - f[kp][kc][i])
@@ -96,10 +96,10 @@ class amperf_reader :
         ret = {}
         dt = d['time']
 
-        for kp in d.keys():
+        for kp in list(d.keys()):
             if kp != 'time':
                 tmp = {}
-                for kc in d[kp].keys():
+                for kc in list(d[kp].keys()):
                     # calc avgMHz delta_aperf / delta_t
                     tmp[kc] = d[kp][kc][0] / dt * 1e-9
                 ret[kp] = tmp
@@ -112,9 +112,9 @@ class amperf_reader :
 
         ret = {}
 
-        for k in p.keys():
+        for k in list(p.keys()):
             tmp = []
-            for c in p[k].keys():
+            for c in list(p[k].keys()):
                 tmp.append(p[k][c])
 
             ret[k] = [np.mean(tmp), np.std(tmp), np.min(tmp), np.max(tmp)]
@@ -131,13 +131,13 @@ class amperf_reader :
 
         cnt = 0
         buf = '{"sample":"freq",'
-        for kp in f.keys():
+        for kp in list(f.keys()):
             if cnt > 0:
                 buf += ','
             cnt += 1
             buf += '"%s":{' % kp
             buf += '"mean":%.3lf,"std":%.3lf' % (s[kp][0], s[kp][1])
-            for kc in f[kp].keys():
+            for kc in list(f[kp].keys()):
                 buf += ',"%s":%.3lf' % (kc,f[kp][kc])
             buf += '}'
         buf += '}'
@@ -148,6 +148,6 @@ if __name__ == '__main__':
     amp = amperf_reader()
 
     while True:
-        print amp.sample_and_json()
+        print(amp.sample_and_json())
 
         time.sleep(.5)

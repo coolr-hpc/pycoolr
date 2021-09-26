@@ -109,15 +109,15 @@ class rapl_reader:
         if dom == '':
             d = self.rapldir + "/enabled"
             if not self.writeint(d, val):
-                print 'Failed to update:', d
-                print errmsg
+                print('Failed to update:', d)
+                print(errmsg)
                 sys.exit(1)
         else:
             dom_ln = self.to_longdn(dom)
             d = self.dirs[dom_ln] + "/enabled"
             if not self.writeint(d, val):
-                print 'Failed to update:', d
-                print errmsg
+                print('Failed to update:', d)
+                print(errmsg)
                 sys.exit(1)
 
     def __init__ (self, sysfsdir='/sys/devices/virtual/powercap/intel-rapl'):
@@ -178,7 +178,7 @@ class rapl_reader:
             try:
                 f = open( fn )
             except:
-                print 'Unable to open', fn
+                print('Unable to open', fn)
                 sys.exit(0)
             self.max_energy_range_uj_d[k] = int(f.readline())
             f.close()
@@ -507,7 +507,7 @@ class rapl_reader:
            A dict with power domain (interger) as key and a list of cpuids as content
         """
         ret = {}
-        for pd in self.readpowerlimitall().keys():
+        for pd in list(self.readpowerlimitall().keys()):
             m = self.re_domain.match(pd)
             if m:
                 pkgid = int(m.group(1))
@@ -520,7 +520,7 @@ class rapl_reader:
         Return:
            A list that contains all possible power domain names (long-name string)
         """
-        return self.readpowerlimitall().keys()
+        return list(self.readpowerlimitall().keys())
 
     def get_powerlimits(self):
         """Return a dict of the current power limit values on all available power domains
@@ -539,7 +539,7 @@ class rapl_reader:
         try:
             f = open(fn, 'w')
         except:
-            print 'Failed to update:', fn, '(root privilege is required)'
+            print('Failed to update:', fn, '(root privilege is required)')
             return
         f.write('%d' % uw)
         f.close()
@@ -564,19 +564,19 @@ class rapl_reader:
         """
 
         rlims = self.readpowerlimitall()
-        for k in rlims.keys():
+        for k in list(rlims.keys()):
             if re.findall('package-[0-9]$', k):
                 self._set_powerlimit(self.dirs[k], newval)
 
 def usage():
-    print 'clr_rapl.py [options]'
-    print ''
-    print '--show:   show the current setting'
-    print '--limitp val: set the limit to all packages'
-    print '         [pkgid:]powerval e.g., 140, 1:120'
-    print ''
-    print 'If no option is specified, run the test pattern.'
-    print ''
+    print('clr_rapl.py [options]')
+    print('')
+    print('--show:   show the current setting')
+    print('--limitp val: set the limit to all packages')
+    print('         [pkgid:]powerval e.g., 140, 1:120')
+    print('')
+    print('If no option is specified, run the test pattern.')
+    print('')
 
 
 def report_powerlimits():
@@ -584,30 +584,30 @@ def report_powerlimits():
 
     nc = clr_nodeinfo.nodeconfig()
 
-    print '%s, model=%d, kernel=%s' % (nc.cpumodelname, nc.cpumodel, nc.version)
-    print
+    print('%s, model=%d, kernel=%s' % (nc.cpumodelname, nc.cpumodel, nc.version))
+    print()
 
     cnt_enabled = 0
     cnt_disabled = 0
-    for k in l.keys():
+    for k in list(l.keys()):
         if l[k]['enabled']:
             cnt_enabled += 1
         else:
             cnt_disabled += 1
 
     if cnt_enabled > 0:
-        print '[Enabled]'
-        for k in l.keys():
+        print('[Enabled]')
+        for k in list(l.keys()):
             if l[k]['enabled']:
-                print "%-10s" % rr.to_shortdn(k), 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW']
-        print
+                print("%-10s" % rr.to_shortdn(k), 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW'])
+        print()
 
     if cnt_disabled > 0:
-        print '[Disabled]'
-        for k in l.keys():
+        print('[Disabled]')
+        for k in list(l.keys()):
             if not l[k]['enabled']:
-                print "%-10s" % rr.to_shortdn(k), 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW']
-        print
+                print("%-10s" % rr.to_shortdn(k), 'curW:', l[k]['curW'], 'maxW:', l[k]['maxW'])
+        print()
 
 #    print '[powerdomain-cpuid mapping]'
 #    pds = rr.create_powerdomains_cpuids()
@@ -616,7 +616,7 @@ def report_powerlimits():
 
 def run_powercap_testbench():
     # hard-coded for Haswell E5-2699v2 dual socket
-    print rr.get_powerdomains()
+    print(rr.get_powerdomains())
     report_powerlimits()
 
     w = 10
@@ -635,16 +635,16 @@ def test_conv():
         sn  = rr.to_shortdn(ln)
         ln2 = rr.to_longdn(sn)
         if ln == ln2:
-            print 'passed: ',
+            print('passed: ', end=' ')
         else:
-            print 'failed: ',
-        print ln, sn, ln2
+            print('failed: ', end=' ')
+        print(ln, sn, ln2)
 
 def test_map():
     pds = rr.create_powerdomains_cpuids()
 
     for pd in pds:
-        print pd, pds[pd]
+        print(pd, pds[pd])
 
 def unittest(m):
     if m == 'conv':
@@ -656,7 +656,7 @@ if __name__ == '__main__':
     rr = rapl_reader()
 
     if not rr.initialized():
-        print 'Error: No intel rapl sysfs found'
+        print('Error: No intel rapl sysfs found')
         sys.exit(1)
 
     shortopt = "h"
@@ -665,8 +665,8 @@ if __name__ == '__main__':
         opts, args = getopt.getopt(sys.argv[1:],
                                    shortopt, longopt)
 
-    except getopt.GetoptError, err:
-        print err
+    except getopt.GetoptError as err:
+        print(err)
         usage()
         sys.exit(1)
 
@@ -681,12 +681,12 @@ if __name__ == '__main__':
             help(rapl_reader)
             sys.exit(0)
         elif o in ("--testbench"):
-            print 'Start: testbench'
+            print('Start: testbench')
             run_powercap_testbench()
-            print 'Stop: testbench'
+            print('Stop: testbench')
             sys.exit(0)
         elif o in ("--getpd"):
-            print rr.get_powerdomains()
+            print(rr.get_powerdomains())
             sys.exit(0)
         elif o in ("--getplim", "--show"):
             report_powerlimits()
@@ -726,9 +726,9 @@ if __name__ == '__main__':
     for i in range(0,3):
         time.sleep(1)
         s = rr.sample_and_json(accflag=True)
-        print s
+        print(s)
     rr.stop_energy_counter()
     s = rr.total_energy_json()
-    print s
+    print(s)
 
     sys.exit(0)

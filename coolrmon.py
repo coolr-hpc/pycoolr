@@ -21,8 +21,8 @@ if __name__ == '__main__':
 
 
     if len(sys.argv) < 2:
-        print 'Usage: %s p [port]'
-        print ''
+        print('Usage: %s p [port]')
+        print('')
         sys.exit(1)
 
 
@@ -31,14 +31,14 @@ if __name__ == '__main__':
     if len(sys.argv) >= 3:
         port = int(sys.argv[2])
 
-    print 'ip:', ip
-    print 'port:', port
+    print('ip:', ip)
+    print('port:', port)
 
 
     wt310 = smq.consumer(ip, port)
     d = wt310.get({'cmd':'cfg'})
     if len(d) == 0:
-        print 'Please check the wt310 producer side!'
+        print('Please check the wt310 producer side!')
         sys.exit(1) # for now. implement a nicer code later
 
 
@@ -47,8 +47,8 @@ if __name__ == '__main__':
     while True:
         d = mqc.get({'cmd':'item'})
         if len(d) > 0:
-            print 'item:', d['item'], 'remain:', d['len']
+            print('item:', d['item'], 'remain:', d['len'])
 
         time.sleep(intervalsec)
 
-    print 'done'
+    print('done')

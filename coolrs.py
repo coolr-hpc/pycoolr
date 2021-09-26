@@ -44,14 +44,14 @@ debuglevel=0
 import getopt
 
 def usage():
-    print ''
-    print 'Usage: coolrmon.py [options] cmd args..'
-    print ''
-    print '[options]'
-    print ''
-    print '--runtests : run internal test funcs'
-    print '-C or --cooldown temp : wait until the max coretemp gets below temp'
-    print ''
+    print('')
+    print('Usage: coolrmon.py [options] cmd args..')
+    print('')
+    print('[options]')
+    print('')
+    print('--runtests : run internal test funcs')
+    print('-C or --cooldown temp : wait until the max coretemp gets below temp')
+    print('')
 
 class coolrmon_tracer:
     def sample_acpi(self, label):
@@ -110,7 +110,7 @@ class coolrmon_tracer:
         self.logger = func
 
     def defaultlogger(self,str):
-        print str
+        print(str)
 
     def __init__ (self):
         # default values
@@ -148,7 +148,7 @@ class coolrmon_tracer:
              ','.join(map((lambda s:'"%s"'%s), self.samples))
         ncpus = len(self.ct.onlinecpus)
         s += ',"ncpus":%d' % ncpus
-        npkgs = len(self.ct.pkgcpus.keys())
+        npkgs = len(list(self.ct.pkgcpus.keys()))
         s += ',"npkgs":%d' % npkgs
 
         for p in sorted(self.ct.pkgcpus.keys()):
@@ -164,7 +164,7 @@ class coolrmon_tracer:
             s += ','.join(map(str,phyid))
             s += ']'
 
-        s += ',"nnodes":%d' % len(self.ct.nodecpus.keys())
+        s += ',"nnodes":%d' % len(list(self.ct.nodecpus.keys()))
         for n in sorted(self.ct.nodecpus.keys()):
             s += ',"node%d":[' % n
             s += ','.join(map(str,self.ct.nodecpus[n]))
@@ -193,7 +193,7 @@ class coolrmon_tracer:
             l = proc.stdout.readline()
             if not l:
                 break
-            print 'stdout:', l,
+            print('stdout:', l, end=' ')
 
 
     def sigh(signal, frame):
@@ -260,7 +260,7 @@ class log2file:
         try:
             self.f = open(fn, 'w')
         except:
-            print 'Error: failed to open', fn
+            print('Error: failed to open', fn)
             self.f = sys.stdout
 
     def logger(self,str):
@@ -277,10 +277,10 @@ class log2beacon:
         try:
             subprocess.call(c)
         except:
-            print 'Error: failed to publish:', c
+            print('Error: failed to publish:', c)
             time.sleep(5)
         if debuglevel > 0:
-            print 'Debug:', c
+            print('Debug:', c)
 
 if __name__ == '__main__':
 
@@ -290,8 +290,8 @@ if __name__ == '__main__':
         opts, args = getopt.getopt(sys.argv[1:], 
                                    shortopt, longopt)
 
-    except getopt.GetoptError, err:
-        print err
+    except getopt.GetoptError as err:
+        print(err)
         usage()
         sys.exit(1)
 
@@ -314,7 +314,7 @@ if __name__ == '__main__':
         elif o in ("--output2beacon"):
             cmd, topic = a.split(':')
             if len(topic) == 0:
-                print 'Specify topic after :'
+                print('Specify topic after :')
                 sys.exit(1)
             l = log2beacon(cmd, topic)
             tr.setlogger(l.logger)
@@ -329,7 +329,7 @@ if __name__ == '__main__':
             tr.shownodeinfo()
             sys.exit(0)
         else:
-            print 'Unknown:', o, a
+            print('Unknown:', o, a)
             sys.exit(1)
     #
     #

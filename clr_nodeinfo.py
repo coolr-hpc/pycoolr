@@ -29,11 +29,11 @@ class cputopology:
         for t in tmp.split(','):
             ab = re.findall('[0-9]+', t)
             if len(ab) == 2 :
-                ret = ret + range( int(ab[0]), int(ab[1])+1 )
+                ret = ret + list(range( int(ab[0]), int(ab[1])+1))
             elif len(ab) == 1:
                 ret = ret + [int(ab[0])]
             else:
-                print 'unlikely at cputoplogy.parserange():',ab
+                print('unlikely at cputoplogy.parserange():',ab)
                 sys.exit(1)
         return ret
 
@@ -45,7 +45,7 @@ class cputopology:
         shift=0
         ret = []
         for mstr in maskstrs:
-            bmint = long(mstr,16)
+            bmint = int(mstr,16)
             for i in range(0,32):
                 if (bmint&1) == 1:
                     ret.append(i+shift)
@@ -62,13 +62,13 @@ class cputopology:
 
             pkgidfn = self.cpubasedir + "cpu%d/topology/physical_package_id" % (cpuid)
             pkgid = int(readbuf(pkgidfn))
-            if not self.pkgcpus.has_key(pkgid) :
+            if pkgid not in self.pkgcpus :
                 self.pkgcpus[pkgid] = []
             self.pkgcpus[pkgid].append(cpuid)
 
         self.cpu2coreid = {}
         self.core2cpuid = {}
-        for pkgid in self.pkgcpus.keys() :
+        for pkgid in list(self.pkgcpus.keys()) :
             for cpuid in self.pkgcpus[pkgid]:
                 coreidfn = self.cpubasedir + "cpu%d/topology/core_id" % (cpuid)
                 coreid = int(readbuf(coreidfn))
@@ -147,42 +147,42 @@ class nodeconfig :
     def __init__ (self):
         self.parse()
 
-        
+
 
 
 def  testnodeconfig():
-    print '=== ', sys._getframe().f_code.co_name
+    print('=== ', sys._getframe().f_code.co_name)
 
     nc = nodeconfig()
-    print 'node: ', nc.nodename
-    print 'version: ', nc.version
-    print 'cpumodel: ', nc.cpumodel
-    print 'memoryKB: ', nc.memoryKB
-    print 'freqdriver: ', nc.freqdriver
-    print
+    print('node: ', nc.nodename)
+    print('version: ', nc.version)
+    print('cpumodel: ', nc.cpumodel)
+    print('memoryKB: ', nc.memoryKB)
+    print('freqdriver: ', nc.freqdriver)
+    print()
 
 def testcputopology():
-    print '=== ', sys._getframe().f_code.co_name
+    print('=== ', sys._getframe().f_code.co_name)
 
     ct = cputopology()
-    print
-    print 'No. of online cpus: ', len(ct.onlinecpus)
-    print
+    print()
+    print('No. of online cpus: ', len(ct.onlinecpus))
+    print()
     for p in sorted(ct.pkgcpus.keys()):
-        print 'pkg%d:' % p, len(ct.pkgcpus[p]), ct.pkgcpus[p]
-        print '   cpuid:', 
+        print('pkg%d:' % p, len(ct.pkgcpus[p]), ct.pkgcpus[p])
+        print('   cpuid:', end=' ')
         for cpuid in ct.pkgcpus[p]:
-            print ct.cpu2coreid[cpuid],ct.cpu2coreid[cpuid][1],
-        print
-    print
+            print(ct.cpu2coreid[cpuid],ct.cpu2coreid[cpuid][1], end=' ')
+        print()
+    print()
     for n in sorted(ct.nodecpus.keys()):
-        print 'node%d:' % n, len(ct.nodecpus[n]), ct.nodecpus[n] 
+        print('node%d:' % n, len(ct.nodecpus[n]), ct.nodecpus[n])
 
-        print '   cpuid:', 
+        print('   cpuid:', end=' ')
         for cpuid in ct.nodecpus[n]:
-            print ct.cpu2coreid[cpuid],
-        print
-    print
+            print(ct.cpu2coreid[cpuid], end=' ')
+        print()
+    print()
 
 
 if __name__ == '__main__':
@@ -190,6 +190,3 @@ if __name__ == '__main__':
     testnodeconfig()
 
     testcputopology()
-
-
-

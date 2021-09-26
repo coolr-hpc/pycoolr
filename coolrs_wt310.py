@@ -93,23 +93,23 @@ class wt310_reader:
 import getopt
 
 def usage():
-    print ''
-    print 'Usage: coolrs_wt310.py [options]'
-    print ''
-    print '[options]'
-    print ''
-    print '-i int : sampling interval in sec'
-    print '-o str : output filename'
-    print '-s str : start the mq producer. str is ip address'
-    print '--set str : issue command'
-    print '--get str : query value'
-    print ''
-    print 'Examples:'
-    print '$ coolrs_wt310.py -i 0.2  # sample every 0.2 sec'
-    print '$ coolrs_wt310.py --set=:INTEG:RESET   # reset the energy itegration'
-    print '$ coolrs_wt310.py --get=:NUM:NORM:VAL? # query values'
+    print('')
+    print('Usage: coolrs_wt310.py [options]')
+    print('')
+    print('[options]')
+    print('')
+    print('-i int : sampling interval in sec')
+    print('-o str : output filename')
+    print('-s str : start the mq producer. str is ip address')
+    print('--set str : issue command')
+    print('--get str : query value')
+    print('')
+    print('Examples:')
+    print('$ coolrs_wt310.py -i 0.2  # sample every 0.2 sec')
+    print('$ coolrs_wt310.py --set=:INTEG:RESET   # reset the energy itegration')
+    print('$ coolrs_wt310.py --get=:NUM:NORM:VAL? # query values')
 
-    print ''
+    print('')
 
 
 if __name__ == '__main__':
@@ -128,8 +128,8 @@ if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:], 
                                    shortopt, longopt)
-    except getopt.GetoptError, err:
-        print err
+    except getopt.GetoptError as err:
+        print(err)
         usage()
         sys.exit(1)
 
@@ -153,7 +153,7 @@ if __name__ == '__main__':
             smqflag = True
             ipadr = a
         else:
-            print 'Unknown:', o, a
+            print('Unknown:', o, a)
             
     #
     #
@@ -168,14 +168,14 @@ if __name__ == '__main__':
         ts = time.time()
         str = '# {"sample":"wt310", "time":%.2lf, "power":%.2lf}' % \
             (ts, s['P'])
-        print str
+        print(str)
         sys.exit(0)
 
     if len(cmd) > 0:
         if cmdmode == 'set':
             wt310.set(cmd)
         else:
-            print wt310.get(cmd)
+            print(wt310.get(cmd))
         sys.exit(0)
 
     f = sys.stdout
@@ -184,10 +184,10 @@ if __name__ == '__main__':
         try:
             f = open(outputfn, 'w')
         except:
-            print 'Error: failed to open', fn
+            print('Error: failed to open', fn)
             sys.exit(1)
 
-        print 'Writing to', outputfn
+        print('Writing to', outputfn)
 
     cfg = {}
     cfg["c1"] = {"label":"Time","unit":"Sec"}
@@ -201,7 +201,7 @@ if __name__ == '__main__':
         mq = smq.producer(ipaddr)
         mq.start()
         mq.dict = cfg
-        print 'Message queue is started:', ipaddr
+        print('Message queue is started:', ipaddr)
 
     kp = keypress.keypress()
     kp.enable()
@@ -227,7 +227,7 @@ if __name__ == '__main__':
         if math.isnan(ev) or math.isnan(pv):
             str = '#' + str
 
-        print >>f, str
+        print(str, file=f)
         f.flush()
 
         if smqflag:

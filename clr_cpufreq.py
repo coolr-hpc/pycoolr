@@ -52,16 +52,16 @@ class cpustatvals:
 
     def pr(self):
         for k in ('id', 'aperf', 'mperf', 'pstate', 'tsc'):
-            print '%s=%d ' % (k, self.d[k]),
-        print 
-    
+            print('%s=%d ' % (k, self.d[k]), end=' ')
+        print()
+
     def diff_u64(self, v1, v2): # v1 - v2
         if v1 >= v2:
             return v1 - v2
         return (self.u64max -v2) + v1
 
     def calc_cpufreq(self,prev): # prev is an object of cpustatvals
-        if not (prev.d.has_key('tsc') and self.d.has_key('tsc')):
+        if not ('tsc' in prev.d and 'tsc' in self.d):
                     return 0.0
         tmp = {}
         for k in ('tsc', 'aperf', 'mperf'):
@@ -77,7 +77,7 @@ class cpustatvals:
 
 
     def calc_aperf(self,prev): # prev is an object of cpustatvals
-        if not (prev.d.has_key('tsc') and self.d.has_key('tsc')):
+        if not ('tsc' in prev.d and 'tsc' in self.d):
                     return 0.0
         tmp = {}
         k = 'aperf'
@@ -211,15 +211,15 @@ if __name__ == '__main__':
 
     freq = cpufreq_reader()
     if not freq.init:
-        print 'Please check the cpustat module is installed'
+        print('Please check the cpustat module is installed')
         sys.exit(1)
 
     freq.outputpercore(False)
 
     for i in range(0, 20):
         j = freq.sample_and_json()
-        print '[freq json]'
-        print j
+        print('[freq json]')
+        print(j)
         time.sleep(1)
 
     sys.exit(0)
@@ -227,25 +227,24 @@ if __name__ == '__main__':
     for i in range(0, 20):
         freq.sample()
 
-        print '[pstate]',
+        print('[pstate]', end=' ')
         for p in freq.pstate():
-            print p,
-        print
+            print(p, end=' ')
+        print()
 
-        print '[aperf]',
+        print('[aperf]', end=' ')
         for f in freq.aperf():
-            print '%.2lf ' % f,
-        print
+            print('%.2lf ' % f, end=' ')
+        print()
 
-        print '[freq]',
+        print('[freq]', end=' ')
         for f in freq.cpufreq():
-            print '%.2lf ' % f,
-        print
+            print('%.2lf ' % f, end=' ')
+        print()
 
         j = freq.sample_and_json()
-        print '[freq json]'
-        print j
+        print('[freq json]')
+        print(j)
 
-        print
+        print()
         time.sleep(1)
-        
