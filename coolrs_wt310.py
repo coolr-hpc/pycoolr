@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # a code to read Yokogawa wt310 via the usbtmc interface
 #

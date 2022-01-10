@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 COOLR RAPL package
@@ -183,6 +183,9 @@ class rapl_reader:
             self.max_energy_range_uj_d[k] = int(f.readline())
             f.close()
 
+            fn = self.dirs[k] + "/energy_uj"
+            if not os.access(fn, os.R_OK):
+                print('Unable to read', fn)
         self.start_energy_counter()
 
     def initialized(self):
