@@ -239,7 +239,8 @@ class coolrmon_tracer:
         self.rapl.start_energy_counter()
 
         while True:
-            if not t.isAlive():
+            #if not t.isAlive():
+            if not t.is_alive():
                 break
 
             self.sample_temp('run')
